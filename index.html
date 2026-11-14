@@ -363,7 +363,15 @@ const PRESETS = [
   {name:'Vampire Consultant', look:{t:['#0f0f14','#1d1d26','#2a2a36'], s:['#1d1d26','#0f0f14'], b:['#141419','#0a0a0d'], jacket:{shirt:'#f4f1ea', tie:'#8a1018'}, legs:L_(['#1a1a22','#0e0e12'],['#121217','#08080a']), shoes:{c:'#0a0a0c',sole:'#000'}, head:'vampire', cape:'#0d0d12', capeIn:'#8a1018', skin:['#ece6f0','#c9c0d4','#9a90a8']}},
   {name:'Break-Room Chef', look:{t:['#d9dde4','#f4f6f9','#ffffff'], s:['#f4f6f9','#d0d5dd'], b:['#d0d5dd','#b2b8c2'], legs:L_(['#2a2c32','#17181c'],['#1d1e22','#0f1012']), shoes:{c:'#1a1b1f',sole:'#000'}, head:'chef', scarf:'#e5484d', buttons:true, belt:null}},
   {name:'Cowboy Coder', look:{t:['#c7bba4','#e6dcc8','#f0e8d8'], s:['#e6dcc8','#c7bba4'], b:['#c7bba4','#a89c86'], vest:'#5a3418', legs:L_(['#3d5d90','#26426e'],['#2c4670','#1b3052']), shoes:{c:'#6b4426',sole:'#2a1a0e',tall:true}, head:'cowboy', scarf:'#c23a3a', headset:true}},
-  {name:'Phantom Temp', look:{t:['#7fb6e6','#a9d4f5','#cfe8fb'], s:['#a9d4f5','#7fb6e6'], b:['#7fb6e6','#5d97c9'], legs:L_(['#8ec4ee','#6aa3d6'],['#6aa3d6','#4f86ba']), shoes:{c:'#cfe8fb',sole:'#a9d4f5'}, head:'short', glasses:true, headset:true, lanyard:true, alpha:.6, skin:['#e6f3ff','#bcdcf5','#8fbde6']}}
+  {name:'Phantom Temp', look:{t:['#7fb6e6','#a9d4f5','#cfe8fb'], s:['#a9d4f5','#7fb6e6'], b:['#7fb6e6','#5d97c9'], legs:L_(['#8ec4ee','#6aa3d6'],['#6aa3d6','#4f86ba']), shoes:{c:'#cfe8fb',sole:'#a9d4f5'}, head:'short', glasses:true, headset:true, lanyard:true, alpha:.6, skin:['#e6f3ff','#bcdcf5','#8fbde6']}},
+  {name:'Cave Explorer', look:{t:['#6b4a2a','#8a6238','#a07848'], s:['#8a6238','#6b4a2a'], b:['#6b4a2a','#4a3220'], vest:'#3a5a3a', legs:L_(['#3d5d90','#26426e'],['#2c4670','#1b3052']), shoes:{c:'#4a3220',sole:'#1a1008',tall:true}, head:'hardhat', belt:'#2a1f18'}},
+  {name:'Retro Racer', look:{t:['#c92a35','#e5484d','#f06a6f'], s:['#e5484d','#c92a35'], b:['#c92a35','#9a1c24'], legs:L_(['#f4f4f4','#c9ced8'],['#dfe3ea','#b0b6c2']), shoes:{c:'#1a1b1f',sole:'#ffffff'}, head:'cap', chest:'#ffd34d', belt:'#111111'}},
+  {name:'Frost Mage', look:{t:['#4a8fc4','#7fb6e6','#a9d4f5'], s:['#7fb6e6','#4a8fc4'], b:['#4a8fc4','#356f9e'], robe:'#6aa3d6', legs:L_(['#35618a','#244766'],['#2a4f72','#1b3550']), shoes:{c:'#cfe8fb',sole:'#7fb6e6'}, head:'wizard', beard:'#f4f8ff', glasses:true}},
+  {name:'Fire Brawler', look:{t:['#a02820','#d6402f','#f2634a'], s:['#d6402f','#a02820'], b:['#a02820','#7a1c16'], legs:L_(['#1d1f25','#111216'],['#15161a','#0b0c0e']), shoes:{c:'#e5484d',sole:'#ffffff'}, head:'short', scarf:'#ffd34d', belt:'#ffd34d'}},
+  {name:'Arcade Champ', look:{t:['#5a1ea8','#8a3ee0','#a864f0'], s:['#8a3ee0','#5a1ea8'], b:['#5a1ea8','#3f1478'], legs:L_(['#1d2b4a','#111a30'],['#16213a','#0b1120']), shoes:{c:'#6fd3ff',sole:'#ffffff'}, head:'beanie', chest:'#3dff8f', headset:true, belt:'#6fd3ff'}},
+  {name:'Disco Admin', look:{t:['#b8941f','#e2b13c','#ffd966'], s:['#e2b13c','#b8941f'], b:['#b8941f','#8a6e14'], legs:L_(['#8a3ee0','#5a1ea8'],['#6a2ab8','#431a7a']), shoes:{c:'#f4f4f4',sole:'#c9ced8'}, head:'curly', glasses:true, chest:'#ffffff', belt:'#ffffff'}},
+  {name:'Lab Scientist', look:{t:['#d9dde4','#f4f6f9','#ffffff'], s:['#f4f6f9','#d0d5dd'], b:['#d0d5dd','#b2b8c2'], robe:'#f4f6f9', legs:L_(['#2a2c32','#17181c'],['#1d1e22','#0f1012']), shoes:{c:'#1a1b1f',sole:'#000000'}, head:'short', glasses:true, lanyard:true}},
+  {name:'Safari Ranger', look:{t:['#b8a878','#d9c898','#ece0b8'], s:['#d9c898','#b8a878'], b:['#b8a878','#968a60'], vest:'#5a6b3a', legs:L_(['#857552','#62553a'],['#6a5d40','#4d432d'],{shorts:true}), shoes:{c:'#6b4426',sole:'#2a1a0e',tall:true}, head:'cowboy', scarf:'#c23a3a'}}
 ];
 const OPTS = [['outfit','Outfit',OUTFITS],['preset','Avatar',PRESETS],['head','Hair / hat',HEADS],['legs','Legwear',LEGS],['shoes','Shoes',SHOES],['skin','Skin tone',SKINS]];
 for (const [k,,list] of OPTS) if (!(avatar[k] >= 0 && avatar[k] < list.length)) avatar[k] = 0;
@@ -1896,6 +1904,13 @@ const CS_LINES = [
   [13.8,'You','Nobody did. It took me 4,381 night shifts.'],
   [16.2,null,null]
 ];
+function saveBossRecord(){
+  if (DIFF !== 0 || LVI !== 14) return;
+  const prev = progress.bestTime[14]; if (prev && SR.level >= prev) return;
+  progress.bestTime[14] = SR.level; progress.bestScore[14] = Math.max(progress.bestScore[14], score);
+  if (progress.finished && ghostRec.length) save('tfs-ghost-14', { t:SR.level, f:ghostRec, av:Object.assign({}, avatar) });
+  save('tfs-progress', progress);
+}
 function startCutscene(){
   state = 'cutscene'; CS = { t:0, li:0 }; MUS.mode = 'calm';
   $('hud').hidden = true; $('bossBar').hidden = true; $('touch').hidden = true; $('chips').innerHTML = ''; $('skipBtn').hidden = false;
@@ -2137,7 +2152,7 @@ function updCEO(h){
     }
     if (Math.abs(b.vx) > 10) b.anim += Math.abs(b.vx)*h*.04;
   }
-  if (b.state === 'defeated'){ b.vx *= .95; if (b.t > 2.8 && state === 'play'){ if (LV.inf) levelClear(); else startCutscene(); } }
+  if (b.state === 'defeated'){ b.vx *= .95; if (b.t > 2.8 && state === 'play'){ if (LV.inf) levelClear(); else { saveBossRecord(); startCutscene(); } } }
   moveBody(b,h);
   if (b.state === 'defeated' || b.state === 'standup') return;
   const hb = {x:b.x+8, y:b.y+10, w:b.w-16, h:b.h-10};
