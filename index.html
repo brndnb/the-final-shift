@@ -116,6 +116,7 @@ input[type=range]{width:100%;accent-color:var(--amber)}
 #tj{width:80px;height:80px;font-size:13px;letter-spacing:.08em}
 #tf{font-size:11px;letter-spacing:.06em}
 input{-webkit-user-select:text;user-select:text}
+.btn.sel{background:var(--amber);color:#1a1206;border-color:transparent}
 input.code{font:600 26px var(--f-mono);letter-spacing:.4em;text-transform:uppercase;color:var(--text);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;padding:14px 18px;width:min(320px,100%);box-sizing:border-box}
 input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
 @media (max-width:860px){ .floors{grid-template-columns:repeat(3,minmax(0,1fr))} }
@@ -215,7 +216,8 @@ input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
   <div class="card wide">
     <div class="eyebrow">Synergex Tower · Practice</div>
     <h2>Pick a floor</h2>
-    <p class="lede">Every floor records your best time and saves a ghost of that run. Race it.</p>
+    <p class="lede">Every floor records your best time and saves a ghost of that run. Race it. Hard and Extreme do not record times.</p>
+    <div class="row" id="diffRow"><button class="btn ghost" data-d="0" type="button">Normal</button><button class="btn ghost" data-d="1" type="button">Hard</button><button class="btn ghost" data-d="2" type="button">Extreme</button></div>
     <div class="floors" id="floors"></div>
     <div class="row"><button class="btn ghost" id="flBack" type="button">Back</button></div>
   </div>
@@ -303,6 +305,8 @@ function save(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e)
 function drop(k){ try { localStorage.removeItem(k); } catch(e){} }
 let settings = Object.assign({sfx:.8, music:.5, gfx:'ultra'}, load('tfs-settings', {}));
 let quality = settings.gfx === 'fast' ? 'fast' : 'ultra';
+let DIFF = [0,1,2].includes(load('tfs-diff',0)) ? load('tfs-diff',0) : 0;
+const DSPD = () => [1,1.25,1.5][DIFF];
 function freshProgress(){ return { unlocked:0, finished:false, avatarLocked:false, bestTime:Array(NF).fill(0), bestScore:Array(NF).fill(0), kills:Array.from({length:NF}, () => ({})), infBest:0, infFloor:1, infKills:{} }; }
 let progress = load('tfs-progress', null);
 if (!progress || !Array.isArray(progress.bestTime) || progress.bestTime.length !== NF) progress = freshProgress();
@@ -634,7 +638,7 @@ function buildLevel(i, custom){
   for (const [type,x,y,w,h] of LV.plats) solids.push({type,x,y,w,h: h || ((type==='desk'||type==='walk') ? 12 : GY-y), oneWay: type==='desk'||type==='walk'});
   for (const [x,y,item] of LV.blocks) solids.push({type:'block',x,y,w:34,h:34,item,used:false,bump:0});
   arena = false; arenaDone = false; minis = []; boss = null;
-  if (LV.kind === 'ceo'){ solids.push({type:'wall',x:ROOM_R,y:-300,w:400,h:GY+300,style:'wood'}); arenaL = ROOM_X - 24; arenaR = ROOM_R; boss = makeCEO(); if (LV.inf){ boss.hp = boss.max = Math.min(30, 9 + 3*(LV.bossNo - 1)); boss.look = LV.bossLook; } }
+  if (LV.kind === 'ceo'){ solids.push({type:'wall',x:ROOM_R,y:-300,w:400,h:GY+300,style:'wood'}); arenaL = ROOM_X - 24; arenaR = ROOM_R; boss = makeCEO(); if (LV.inf){ boss.hp = boss.max = Math.min(30, 9 + 3*(LV.bossNo - 1)); boss.look = LV.bossLook; } else boss.hp = boss.max = 9 + 3*DIFF; }
   if (LV.kind === 'mini'){ solids.push({type:'wall',x:LV.arenaR,y:-300,w:24,h:GY+300,exit:true}); arenaL = LV.arenaX - 24; arenaR = LV.arenaR;
     minis = LV.mini === 'security' ? [makeMini('guard', LV.arenaX + 760), makeMini('guard', LV.arenaX + 920)] : [makeMini('ray', LV.arenaX + 860), makeMini('sue', LV.arenaX + 640)]; }
   enemies = LV.enemies.map(makeEnemy);
@@ -1998,7 +2002,7 @@ function ballistic(kind, sx, sy, tx, ty, Tt, grav, extra){
 }
 
 /* ---------- mini bosses ---------- */
-function makeMini(kind, x){ const hp = (kind === 'guard' ? 4 : 5) + (LV.hpBonus || 0); return { kind, x, y:GY-75, w:34, h:75, vx:0, vy:0, hp, max:hp, state:'patrol', t:0, face:-1, dir:-1, inv:0, atkT:1.6 + Math.random(), onGround:false, dead:false, deathT:0, anim:0, armT:0, bubble:'', bubbleT:0 }; }
+function makeMini(kind, x){ const hp = (kind === 'guard' ? 4 : 5) + (LV.hpBonus || 0) + DIFF; return { kind, x, y:GY-75, w:34, h:75, vx:0, vy:0, hp, max:hp, state:'patrol', t:0, face:-1, dir:-1, inv:0, atkT:1.6 + Math.random(), onGround:false, dead:false, deathT:0, anim:0, armT:0, bubble:'', bubbleT:0 }; }
 function miniSay(m, s){ m.bubble = s; m.bubbleT = 1.6; }
 function damageMini(m){
   if (m.inv > 0 || m.dead) return false;
@@ -2018,7 +2022,7 @@ function updMini(m,h){
   if (m.dead){ m.deathT += h; return; }
   if (!arena) { m.vx = 0; moveBody(m,h); return; }
   m.t += h; m.inv = Math.max(0, m.inv - h); m.armT = Math.max(0, m.armT - h); m.bubbleT = Math.max(0, m.bubbleT - h);
-  const p = player, pcx = p.x + p.w/2, mcx = m.x + m.w/2, dx = pcx - mcx, sm = LV.speed * (slowT > 0 ? .5 : 1);
+  const p = player, pcx = p.x + p.w/2, mcx = m.x + m.w/2, dx = pcx - mcx, sm = LV.speed * DSPD() * (slowT > 0 ? .5 : 1);
   if (m.state !== 'charge') m.face = Math.sign(dx) || m.face;
   if (m.kind === 'guard'){
     switch (m.state){
@@ -2099,7 +2103,7 @@ function damageCEO(){
 function updCEO(h){
   const b = boss, p = player; if (!b || b.state === 'wait') return;
   b.t += h; b.inv = Math.max(0, b.inv - h); b.armT = Math.max(0, b.armT - h);
-  const pcx = p.x + p.w/2, bcx = b.x + b.w/2, sm = (slowT > 0 ? .55 : 1) * (LV.inf ? Math.min(1.5, 1 + (LV.bossNo - 1)*.06) : 1);
+  const pcx = p.x + p.w/2, bcx = b.x + b.w/2, sm = DSPD() * (slowT > 0 ? .55 : 1) * (LV.inf ? Math.min(1.5, 1 + (LV.bossNo - 1)*.06) : 1);
   const alive = enemies.filter(e => !e.dead && e.summoned).length;
   if (b.state === 'seated'){
     b.vx = 0; b.face = Math.sign(pcx - bcx) || -1;
@@ -2209,7 +2213,7 @@ function step(h){
   if (LV.goalX && (LV.kind !== 'mini' || arenaDone) && p.x + p.w > LV.goalX + 40){ levelClear(); return; }
   if ((LV.kind === 'ceo' && !arena && p.x > ROOM_X + 40) || (LV.kind === 'mini' && !arena && !arenaDone && p.x > LV.arenaX + 40)){ enterArena(); if (state !== 'play') return; }
 
-  const pcx = p.x + p.w/2, sm = LV.speed * (slowT > 0 ? .45 : 1);
+  const pcx = p.x + p.w/2, sm = LV.speed * DSPD() * (slowT > 0 ? .45 : 1);
   for (const e of enemies){
     if (e.dead){ e.deathT += h; continue; }
     if (!e.active){ if (e.x < cam + VW + 60 && e.x > cam - 200){ e.active = true; if (e.type === 'mail') sfx.drop(); else if (e.type !== 'invite') sfx.ping(); } else continue; }
@@ -2427,7 +2431,7 @@ function enterPressed(){
 function beginLevel(i){
   hideSub(); CS = null; ICS = null; BI = null; $('skipBtn').hidden = true;
   INF.on = i < 0; buildLevel(i, i < 0 ? infLevel(INF.n) : undefined); resetPlayer();
-  lives = 3; score = 0; coffees = 0; killed = 0; timeLeft = LV.time; endWon = false;
+  lives = [3,2,1][DIFF]; score = 0; coffees = 0; killed = 0; timeLeft = Math.round(LV.time*[1,.8,.65][DIFF]); endWon = false;
   for (const k in last) delete last[k];
   updateCamera(0,true); SR.level = 0; ghostRec = []; ghostAcc = 0;
   const gd = progress.finished && i >= 0 ? load('tfs-ghost-'+i, null) : null;
@@ -2436,7 +2440,7 @@ function beginLevel(i){
   state = 'intro'; introT = 0; show(null);
   $('inFloor').textContent = LV.inf ? `Annex floor ${LV.floor} · Infinite${LV.kind === 'mini' ? ' · Mini boss' : LV.kind === 'ceo' ? ' · Boss' : ''}` : `Floor ${LV.floor} of 15${LV.kind === 'mini' ? ' · Mini boss' : LV.kind === 'ceo' ? ' · Final boss' : ''}`;
   $('inName').textContent = LV.name; $('inMemo').textContent = LV.memo; $('introCard').hidden = false;
-  $('clockLbl').textContent = `Floor ${LV.floor} · time left`;
+  $('clockLbl').textContent = `Floor ${LV.floor} · time left${['',' · Hard',' · Extreme'][DIFF]}`;
   updateHUD();
 }
 function startPlay(){ $('introCard').hidden = true; state = 'play'; last_t = performance.now(); show(null); }
@@ -2448,7 +2452,7 @@ function levelClear(){
   burst(player.x, player.y, ['#ffb45e','#5fe0a6','#8f83ff','#ffffff'], 40);
   const prevBestT = progress.bestTime[LVI];
   progress.bestScore[LVI] = Math.max(progress.bestScore[LVI], score);
-  const newBest = !prevBestT || SR.level < prevBestT;
+  const newBest = DIFF === 0 && (!prevBestT || SR.level < prevBestT);
   if (newBest) progress.bestTime[LVI] = SR.level;
   progress.kills[LVI] = Object.assign({}, killsByType);
   progress.unlocked = Math.max(progress.unlocked, Math.min(14, LVI + 1)); save('tfs-progress', progress);
@@ -2488,6 +2492,9 @@ $('btnSecret').onclick = openSecret; $('btnInf').onclick = openInf;
 $('secretGo').onclick = trySecret; $('secretBack').onclick = openTitle;
 $('secretInput').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); trySecret(); } else if (e.key === 'Escape'){ openTitle(); } });
 $('infBack').onclick = openTitle;
+function paintDiff(){ document.querySelectorAll('#diffRow .btn').forEach(b => b.classList.toggle('sel', +b.dataset.d === DIFF)); }
+document.querySelectorAll('#diffRow .btn').forEach(b => b.onclick = () => { DIFF = +b.dataset.d; save('tfs-diff', DIFF); paintDiff(); });
+paintDiff();
 $('infCont').onclick = () => { INF.kills = Object.assign({}, progress.infKills || {}); SR.runActive = false; beginInf(progress.infFloor || 1); };
 $('infNew').onclick = () => { progress.infFloor = 1; progress.infKills = {}; INF.kills = {}; save('tfs-progress', progress); SR.runActive = false; beginInf(1); };
 function twoStep(btn, label, fn){
