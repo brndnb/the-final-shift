@@ -158,7 +158,7 @@ input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
   <div class="top"><b id="bossName">THE CEO</b><span id="bossSub"></span></div>
   <div class="segs" id="bossSegs"></div>
 </div>
-<div id="botBar" hidden><span>Bot speedrun · 3x speed · invincible</span><button class="icon-btn" id="botStop" type="button">Stop</button></div>
+<div id="botBar" hidden><span id="botTxt">Bot speedrun</span><button class="icon-btn" id="botSpd" type="button">Speed 1x</button><button class="icon-btn" id="botDiff" type="button">Normal</button><button class="icon-btn" id="botStop" type="button">Stop</button></div>
 <div id="introCard" hidden>
   <div class="eyebrow" id="inFloor"></div>
   <h2 id="inName"></h2>
@@ -636,7 +636,7 @@ let player, boss = null, minis = [], arena = false, arenaDone = false, arenaL = 
 let score = 0, coffees = 0, killed = 0, killsByType = {}, lives = 3, lastPing = 0;
 let CS = null, ICS = null, BI = null, ghost = null, ghostRec = [], ghostAcc = 0;
 let INF = { on:false, n:1, kills:{} }, BLINES = null;
-let ELEV = null, BOT = { on:false, i:0, total:0, lastX:0, stuck:0, wait:0, speed:3 };
+let ELEV = null, BOT = { on:false, i:0, total:0, lastX:0, stuck:0, wait:0, speed:1, deaths:0, acc:0, stall:0, lx:0, sig:0, sigT:0, li:-1, fr:0 };
 const input = { l:false, r:false, j:false, d:false };
 
 function makeEnemy([type,x,y], i){
@@ -1971,28 +1971,116 @@ function drawEpilogue(t){
   if (t < 1.2){ g.fillStyle = `rgba(255,244,220,${1 - ease(t/1.2)})`; g.fillRect(0,0,VW,VH); }
 }
 /* bot speedrun demo: runs invincible at 3x speed and never stops (the game has no real glitches to exploit) */
-function botThink(){
-  const p = player, pcx = p.x + p.w/2; p.dnd = 99; let dir = 1;
-  if (arena){
-    let ts = enemies.filter(e => !e.dead).map(e => e.x + e.w/2);
-    if (!ts.length) ts = minis.filter(m => !m.dead).map(m => m.x + m.w/2);
-    if (!ts.length && boss && boss.state !== 'defeated' && boss.state !== 'wait') ts = [boss.x + boss.w/2];
-    if (ts.length){ const t = ts.reduce((a,b) => Math.abs(b - pcx) < Math.abs(a - pcx) ? b : a); dir = t > pcx ? 1 : -1; if (Math.abs(t - pcx) < 70 && p.onGround){ p.jumpBuf = .13; input.j = true; } }
+/* Bot speedrun player: no invincibility. Every 1/30 s it simulates a dozen short plans (run, early/late jumps, hold for bigger bounces,
+   wait, back off, double jump) one second ahead against predicted enemy and projectile motion, and takes the fastest safe one. */
+const BOT_POL = (() => {
+  const a = [{wait:0,d0:1,jumpAt:null,hold:.45}, {wait:0,d0:1,jumpAt:null,hold:0}];
+  for (const jt of [0,.05,.1,.15,.2,.25,.3,.35,.4,.5]) for (const hold of [.12,.45]) a.push({wait:0,d0:1,jumpAt:jt,hold});
+  for (const d0 of [0,-1]){ a.push({wait:.3,d0,jumpAt:null,hold:0}); a.push({wait:.3,d0,jumpAt:0,hold:.45}); a.push({wait:.6,d0,jumpAt:null,hold:0}); }
+  a.push({wait:0,d0:1,jumpAt:0,hold:.45,j2:.4}, {wait:0,d0:1,jumpAt:.1,hold:.45,j2:.5});
+  return a;
+})();
+const BOT_ITEM = { gear:150, energy:500, dnd:350, headphones:250, battery:150, ram:120, toolkit:100 };
+function botRollout(P, pol, C){
+  const h = C.h, s = {x:P.x,y:P.y,w:P.w,h:P.h,vx:P.vx,vy:P.vy,onGround:P.onGround,coyote:P.coyote,drop:0,prevBottom:P.y+P.h};
+  let stomps = 0, tgt = 0, dmgK = -1, fell = false, bonus = 0, jumped = false, j2 = pol.j2 === undefined, air = P.airJumps;
+  const dead = new Set(), got = new Set(), fall = new Map();
+  for (let k = 0; k < C.steps; k++){
+    const t = k*h, dir = t < pol.wait ? pol.d0 : 1;
+    const hold = pol.jumpAt === null ? t < pol.hold : (t >= pol.jumpAt && t < pol.jumpAt + pol.hold);
+    s.vx += (dir*C.spd - s.vx)*Math.min(1,(s.onGround ? 16 : 8)*h);
+    s.coyote = s.onGround ? .1 : s.coyote - h;
+    if (!jumped && pol.jumpAt !== null && t >= pol.jumpAt - 1e-9 && t < pol.jumpAt + .13 && s.coyote > 0){ s.vy = -JUMP*C.jm; s.coyote = 0; s.onGround = false; jumped = true; }
+    else if (!j2 && t >= pol.j2 && !s.onGround && air > 0 && C.ram){ s.vy = -JUMP*.92; air--; j2 = true; }
+    if (!hold && s.vy < -340) s.vy = -340;
+    s.prevBottom = s.y + s.h;
+    moveBody(s, h, false);
+    if (s.y > VH + 60){ fell = true; break; }
+    let hurt = false;
+    for (const o of C.F){
+      if (dead.has(o)) continue;
+      let ex = o.x + o.vx*t, ey = o.y;
+      if (o.fly){ ex = o.x + o.dirx*o.dr*t; ey = o.baseY + Math.sin(o.ph + 3*t)*o.amp; }
+      else if (o.hang){ if (!fall.has(o) && Math.abs(s.x + s.w/2 - (o.x + o.w/2)) < 150) fall.set(o, t); if (fall.has(o)){ const fd = t - fall.get(o); ey = Math.min(o.gy, o.y + .5*GRAV*fd*fd); } }
+      const hb = {x:ex + o.ix, y:ey + o.iy, w:o.w - 2*o.ix, h:o.h - o.iy - o.ib};
+      if (!overlap(s,hb)) continue;
+      if (!o.noStomp && s.vy > 0 && s.prevBottom <= hb.y + o.sl){ dead.add(o); stomps++; tgt += o.value; s.vy = hold ? -720 : -470; s.y = hb.y - s.h; s.onGround = false; }
+      else if (!o.harmless) hurt = true;
+    }
+    for (const z of C.H){ if (overlap(s,{x:z.x + z.vx*t - 6, y:z.y + z.vy*t + .5*z.grav*t*t - 6, w:z.w + 12, h:z.h + 12})) hurt = true; }
+    if (hurt && dmgK < 0 && !C.inv) dmgK = k;
+    for (const it of C.I){ if (!got.has(it) && Math.abs(s.x + s.w/2 - it.x) < 20 && Math.abs(s.y + s.h/2 - it.y) < 38){ got.add(it); bonus += it.v; } }
   }
-  input.r = dir > 0; input.l = dir < 0;
-  const front = p.x + p.w, nearGap = dir > 0 && LV.gaps.some(([a]) => front > a - 50 && front < a);
-  if (Math.abs(p.x - BOT.lastX) < .3) BOT.stuck++; else BOT.stuck = 0; BOT.lastX = p.x;
-  if (p.onGround && (nearGap || BOT.stuck > 3)){ p.jumpBuf = .13; input.j = true; }
-  if (p.vy > 0) input.j = false;
+  return {s, stomps, tgt, dmgK, fell, bonus};
 }
-function botFloor(i){ BOT.i = i; BOT.stuck = 0; BOT.wait = 0; beginLevel(i); ghost = null; startPlay(); }
+function botThrow(){
+  const p = player; if (p.ammo <= 0 || p.throwCD > 0) return;
+  const cand = [];
+  if (boss && arena && boss.state !== 'defeated' && boss.state !== 'wait' && boss.state !== 'intro' && !boss.shielded) cand.push(boss);
+  if (arena) for (const m of minis) if (!m.dead) cand.push(m);
+  for (const e of enemies) if (!e.dead && e.active && (arena ? e.x > arenaL : (e.type === 'virus' || e.type === 'printer' || e.type === 'update'))) cand.push(e);
+  for (const c of cand){ const dx = ((c.x + c.w/2) - (p.x + p.w/2))*p.face, dy = (c.y + c.h/2) - (p.y + 25); if (dx > 60 && dx < 420 && Math.abs(dy) < 90){ throwGear(); return; } }
+}
+function botThink(){
+  const p = player, pcx = p.x + p.w/2, sm = LV.speed * DSPD(), F = [], H = [], I = [];
+  if (arena){ const sig = enemies.filter(e => !e.dead).length*1000 + (boss ? boss.hp : 0)*10 + minis.reduce((a,m) => a + Math.max(0,m.hp), 0); if (sig !== BOT.sig){ BOT.sig = sig; BOT.sigT = 0; } else BOT.sigT += 1/30; if (BOT.sigT > 20){ BOT.sigT = 0; botRetry(); return; } }
+  if (!arena){ if (p.x - BOT.lx < 2) BOT.stall += 1/30; else BOT.stall = Math.max(0, BOT.stall - 1/15); } else BOT.stall = 0; BOT.lx = p.x;
+  for (const e of enemies){
+    if (e.dead || !e.active || e.x > p.x + 800 || e.x + e.w < p.x - 300) continue;
+    const t = e.type, dx = pcx - (e.x + e.w/2);
+    const o = { x:e.x, y:e.y, w:e.w, h:e.h, vx:0, ix:3, iy:3, ib:2, sl:12, value:25, fly:false, noStomp:t === 'virus', harmless:false };
+    if (t === 'chat' || t === 'spam' || t === 'virus' || t === 'invite' || t === 'call') o.vx = e.vx;
+    else if (t === 'update'){ o.vx = e.stun > 0 ? 0 : e.vx; o.harmless = e.stun > 0; }
+    else if (t === 'meeting'){ const sees = Math.abs(dx) < 300 + sm*60 && Math.abs((p.y + p.h) - (e.y + e.h)) < 70; o.vx = e.charging ? e.vx : (sees ? Math.sign(dx)*235*sm : e.vx); }
+    else if (t === 'mail' || t === 'popup'){ o.fly = true; o.baseY = e.baseY; o.ph = e.ph; o.amp = t === 'mail' ? 34 : 10; o.dr = (t === 'mail' ? 72 : (Math.abs(dx) > 300 ? 30 : 0))*sm; o.dirx = Math.sign(dx) || 1; }
+    if (t === 'invite' && e.state === 'hang'){ o.hang = true; o.gy = GY - e.h; }
+    F.push(o);
+  }
+  if (arena) for (const m of minis) if (!m.dead) F.push({x:m.x,y:m.y,w:m.w,h:m.h,vx:m.vx,ix:4,iy:6,ib:0,sl:16,value:300,fly:false,harmless:false});
+  if (boss && boss.state !== 'defeated' && boss.state !== 'wait' && boss.state !== 'intro') F.push({x:boss.x,y:boss.y,w:boss.w,h:boss.h,vx:boss.vx,ix:8,iy:10,ib:0,sl:18,value:boss.shielded ? 0 : 300,fly:false,harmless:!boss.standing});
+  for (const z of hostile) if (z.x > p.x - 300 && z.x < p.x + 800) H.push({x:z.x,y:z.y,w:z.w,h:z.h,vx:z.vx || 0,vy:z.vy || 0,grav:z.grav || 0});
+  for (const it of items) if (!it.taken && !(it.pop > 0) && Math.abs(it.x - p.x) < 600){ const v = BOT_ITEM[it.type] || 0; if (v) I.push({x:it.x,y:it.y,v}); }
+  let tx = null;
+  if (arena){ const cs = []; for (const e of enemies) if (!e.dead && e.x > arenaL && e.x < arenaR) cs.push(e.x + e.w/2); if (!cs.length) for (const m of minis) if (!m.dead) cs.push(m.x + m.w/2); if (!cs.length && boss && boss.state !== 'defeated' && boss.state !== 'wait') cs.push(boss.x + boss.w/2); if (cs.length) tx = cs.reduce((a,b) => Math.abs(b - pcx) < Math.abs(a - pcx) ? b : a); }
+  const sue = arena ? minis.find(m => m.kind === 'sue' && !m.dead) : null, rangedOK = !(sue && !enemies.some(e => !e.dead && e.x > arenaL && e.x < arenaR));
+  if (!rangedOK) tx = sue.x + sue.w/2;
+  const C = { h:1/60, steps:60, spd:RUN*(p.dnd > 0 ? 1.15 : 1)*(p.energy > 0 ? 1.3 : 1), jm:p.energy > 0 ? 1.12 : 1, ram:p.ram > 0, inv:p.inv > 0 || p.dnd > 0, F, H, I };
+  const saved = solids; solids = solids.filter(s => s.x < p.x + 900 && s.x + s.w > p.x - 400);
+  let best = BOT_POL[0], bs = -Infinity;
+  for (const pol of BOT_POL){
+    if (pol.j2 !== undefined && !C.ram) continue;
+    const r = botRollout(p, pol, C);
+    let sc; if (tx !== null){ const dd = Math.abs(r.s.x + 13 - tx); sc = (p.ammo > 0 && BOT.sigT < 5 && rangedOK) ? -Math.abs(dd - 300) : -dd; } else sc = r.s.x - p.x;
+    sc += r.stomps*25 + r.tgt + r.bonus;
+    if (r.dmgK >= 0) sc -= (BOT.stall > 2.5 ? 120 : 1e5) - r.dmgK*2;
+    if (BOT.deaths) sc += (Math.random() - .5)*30;
+    if (r.fell) sc -= 1e5;
+    if (sc > bs){ bs = sc; best = pol; }
+  }
+  solids = saved;
+  input.r = (best.wait > 0 ? best.d0 : 1) > 0; input.l = (best.wait > 0 ? best.d0 : 1) < 0;
+  if (best.jumpAt === 0 && (p.onGround || p.coyote > 0)){ p.jumpBuf = .13; input.j = true; }
+  else input.j = best.jumpAt === null ? best.hold > 0 : (best.jumpAt === 0 && best.hold > 0);
+  if (arena && tx !== null && p.ammo > 0){ const dT = Math.sign(tx - pcx); if (Math.abs(tx - pcx) < 380 && p.face !== dT){ input.r = dT > 0; input.l = dT < 0; } }
+  botThrow();
+  const tt = $('botTxt'); if (tt){ const s = `Floor ${BOT.i + 1}/15 · ${['Normal','Hard','Extreme'][DIFF]} · ${lives} ${lives === 1 ? 'life' : 'lives'} · resets ${BOT.deaths} · ${fmtTime(BOT.total)}`; if (tt.textContent !== s) tt.textContent = s; }
+}
+function botFloor(i){ if (i !== BOT.li){ BOT.fr = 0; BOT.li = i; } BOT.i = i; BOT.stuck = 0; BOT.stall = 0; BOT.sigT = 0; BOT.wait = 0; beginLevel(i); ghost = null; startPlay(); }
 function botNext(){ if (BOT.i < 14) botFloor(BOT.i + 1); }
-function startBot(){ wakeAudio(); BOT.on = true; BOT.total = 0; SR.runActive = false; $('botBar').hidden = false; botFloor(0); }
+function botRetry(){ BOT.deaths++; BOT.fr++; if (BOT.fr > 40) botFail(); else botFloor(BOT.i); }
+function botFail(){
+  BOT.on = false; input.l = input.r = input.j = false; $('botBar').hidden = true; state = 'end'; endWon = false; ELEV = null; sfx.lose();
+  $('endEyebrow').textContent = 'Bot speedrun · ended'; $('endTitle').textContent = 'The bot gave up.'; $('endTitle').className = 'lose';
+  $('endReason').textContent = `Floor ${BOT.i + 1} on ${['Normal','Hard','Extreme'][DIFF]} beat the bot after ${BOT.fr - 1} tries (${fmtTime(BOT.total)} of game time so far). It plays for real with no invincibility, so some difficulties are genuinely hard.`;
+  fillStats(); $('sTime').textContent = fmtTime(BOT.total); $('endPrimary').textContent = 'Try again'; $('endPrimary').onclick = startBot; $('endNote').textContent = '';
+  show('end'); $('endPrimary').focus();
+}
+function startBot(){ wakeAudio(); BOT.on = true; BOT.total = 0; BOT.deaths = 0; BOT.speed = 1; SR.runActive = false; $('botBar').hidden = false; $('botDiff').textContent = ['Normal','Hard','Extreme'][DIFF]; $('botSpd').textContent = 'Speed 1x'; botFloor(0); }
 function botStop(){ BOT.on = false; input.l = input.r = input.j = false; $('botBar').hidden = true; openTitle(); }
 function botFinish(){
   BOT.on = false; input.l = input.r = input.j = false; $('botBar').hidden = true; state = 'end'; endWon = false; ELEV = null; sfx.win();
   $('endEyebrow').textContent = 'Bot speedrun · complete'; $('endTitle').textContent = 'Run complete.'; $('endTitle').className = 'win';
-  $('endReason').textContent = `The bot cleared all 15 floors and the CEO in ${fmtTime(BOT.total)} of game time. It never stops running, jumps every gap and stays invincible. The game has no real glitches, so this is what a perfect-speed route looks like.`;
+  $('endReason').textContent = `The bot cleared all 15 floors and the CEO in ${fmtTime(BOT.total)} of game time. It played for real: ${[3,2,1][DIFF]} ${DIFF === 2 ? 'life' : 'lives'} per floor, no invincibility, and ${BOT.deaths} reset${BOT.deaths === 1 ? '' : 's'}. Tactics: never stop running, hold jump on every stomp for bigger bounces, route through energy drinks and shields, and throw IT gear at the bosses. The game has no real glitches to exploit.`;
   fillStats(); $('sTime').textContent = fmtTime(BOT.total); $('endPrimary').textContent = 'Watch again'; $('endPrimary').onclick = startBot; $('endNote').textContent = '';
   show('end'); $('endPrimary').focus();
 }
@@ -2602,6 +2690,8 @@ $('secretGo').onclick = trySecret; $('secretBack').onclick = openTitle;
 $('secretInput').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); trySecret(); } else if (e.key === 'Escape'){ openTitle(); } });
 $('infBack').onclick = openTitle;
 $('finInf').onclick = openInf; $('finRun').onclick = startBot; $('btnBot').onclick = startBot; $('botStop').onclick = botStop;
+$('botSpd').onclick = () => { BOT.speed = BOT.speed === 1 ? 2 : BOT.speed === 2 ? 4 : 1; $('botSpd').textContent = 'Speed ' + BOT.speed + 'x'; };
+$('botDiff').onclick = () => { DIFF = (DIFF + 1) % 3; save('tfs-diff', DIFF); startBot(); };
 function paintDiff(){ document.querySelectorAll('#diffRow .btn').forEach(b => b.classList.toggle('sel', +b.dataset.d === DIFF)); }
 document.querySelectorAll('#diffRow .btn').forEach(b => b.onclick = () => { DIFF = +b.dataset.d; save('tfs-diff', DIFF); paintDiff(); });
 paintDiff();
@@ -2690,9 +2780,8 @@ function frame(now){
   if (state !== 'pause') T += dt;
   if (state === 'play'){
     SR.level += dt; if (SR.runActive) SR.run += dt;
-    if (BOT.on) botThink();
     let rem = dt * (BOT.on ? BOT.speed : 1); if (BOT.on) BOT.total += rem;
-    while (rem > 1e-6 && state === 'play'){ const hs = Math.min(rem, 1/120); step(hs); rem -= hs; }
+    while (rem > 1e-6 && state === 'play'){ const hs = Math.min(rem, 1/120); if (BOT.on){ BOT.acc += hs; if (BOT.acc >= 1/30){ BOT.acc = 0; botThink(); } } step(hs); rem -= hs; }
     updateCamera(dt * (BOT.on ? BOT.speed : 1)); if (state === 'play') updateHUD();
     if (ultra() && !document.hidden){ perfAcc += dt; perfN++; perfTime += dt;
       if (perfTime > 3){ if (perfAcc/perfN > 1/30){ quality = 'fast'; settings.gfx = 'fast'; save('tfs-settings', settings); resize(); const tEl = $('toast'); tEl.textContent = 'Switched to Fast graphics for a smoother frame rate. Change it in Settings.'; tEl.hidden = false; setTimeout(() => tEl.hidden = true, 3200); } perfAcc = perfN = perfTime = 0; } }
@@ -2713,7 +2802,7 @@ function frame(now){
     player.anim += dt*6; player.onGround = true;
     if (BOT.on && ELEV && ELEV.t > 2.0) botNext();
   }
-  else if (state === 'end' && BOT.on){ BOT.wait += dt; if (BOT.wait > .8){ BOT.wait = 0; botFloor(BOT.i); } }
+  else if (state === 'end' && BOT.on){ BOT.wait += dt; if (BOT.wait > .8){ BOT.wait = 0; botRetry(); } }
   if (state !== 'pause'){ updateFx(dt); updSub(dt); }
   if (state === 'play' || state === 'pause' || state === 'intro' || state === 'bossintro') updateSR();
   try { render(T); } catch(e){ /* keep the loop alive */ }
