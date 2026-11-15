@@ -371,7 +371,12 @@ const PRESETS = [
   {name:'Arcade Champ', look:{t:['#5a1ea8','#8a3ee0','#a864f0'], s:['#8a3ee0','#5a1ea8'], b:['#5a1ea8','#3f1478'], legs:L_(['#1d2b4a','#111a30'],['#16213a','#0b1120']), shoes:{c:'#6fd3ff',sole:'#ffffff'}, head:'beanie', chest:'#3dff8f', headset:true, belt:'#6fd3ff'}},
   {name:'Disco Admin', look:{t:['#b8941f','#e2b13c','#ffd966'], s:['#e2b13c','#b8941f'], b:['#b8941f','#8a6e14'], legs:L_(['#8a3ee0','#5a1ea8'],['#6a2ab8','#431a7a']), shoes:{c:'#f4f4f4',sole:'#c9ced8'}, head:'curly', glasses:true, chest:'#ffffff', belt:'#ffffff'}},
   {name:'Lab Scientist', look:{t:['#d9dde4','#f4f6f9','#ffffff'], s:['#f4f6f9','#d0d5dd'], b:['#d0d5dd','#b2b8c2'], robe:'#f4f6f9', legs:L_(['#2a2c32','#17181c'],['#1d1e22','#0f1012']), shoes:{c:'#1a1b1f',sole:'#000000'}, head:'short', glasses:true, lanyard:true}},
-  {name:'Safari Ranger', look:{t:['#b8a878','#d9c898','#ece0b8'], s:['#d9c898','#b8a878'], b:['#b8a878','#968a60'], vest:'#5a6b3a', legs:L_(['#857552','#62553a'],['#6a5d40','#4d432d'],{shorts:true}), shoes:{c:'#6b4426',sole:'#2a1a0e',tall:true}, head:'cowboy', scarf:'#c23a3a'}}
+  {name:'Safari Ranger', look:{t:['#b8a878','#d9c898','#ece0b8'], s:['#d9c898','#b8a878'], b:['#b8a878','#968a60'], vest:'#5a6b3a', legs:L_(['#857552','#62553a'],['#6a5d40','#4d432d'],{shorts:true}), shoes:{c:'#6b4426',sole:'#2a1a0e',tall:true}, head:'cowboy', scarf:'#c23a3a'}},
+  {name:'George Washington', look:{t:['#16223d','#22345c','#2c4170'], s:['#22345c','#16223d'], b:['#16223d','#10172b'], jacket:{shirt:'#f4efe4'}, scarf:'#f4f4f4', buttons:true, legs:L_(['#f4efe4','#d9d3c4'],['#e2dccd','#bfb8a8']), shoes:{c:'#1a1410',sole:'#000000',tall:true}, head:'tricorn', belt:'#e2b13c'}},
+  {name:'Genghis Khan', look:{t:['#8a3a1c','#b8502a','#d6693a'], s:['#b8502a','#8a3a1c'], b:['#8a3a1c','#6a2a12'], robe:'#9a4220', vest:'#2a1d15', beard:'#2a1d15', legs:L_(['#4a3220','#33241a'],['#3a2a1d','#281c13']), shoes:{c:'#4a3220',sole:'#1a1008',tall:true}, head:'beanie', belt:'#e2b13c'}},
+  {name:'Zeus', look:{t:['#e9eef6','#ffffff','#f4f8ff'], s:['#ffffff','#d0d5dd'], b:['#e9eef6','#c4ccd8'], cape:'#e9eef6', beard:'#f4f8ff', chest:'#6fd3ff', legs:L_(['#f4f6f9','#d0d5dd'],['#e2e6ec','#bfc6d2'],{shorts:true}), shoes:{c:'#c9a85a',sole:'#8a6e14'}, head:'curly', belt:'#e2b13c'}},
+  {name:'Thor', look:{t:['#6b7380','#9aa3b0','#b8c0cc'], s:['#9aa3b0','#6b7380'], b:['#6b7380','#4f5661'], cape:'#c0392b', armor:true, beard:'#b8863a', chest:'#6fd3ff', legs:L_(['#4a3220','#33241a'],['#3a2a1d','#281c13']), shoes:{c:'#4a3220',sole:'#1a1008',tall:true}, head:'long', belt:'#e2b13c'}},
+  {name:'Ash Warrior', look:{t:['#5a3a24','#7a5232','#946840'], s:['#7a5232','#5a3a24'], b:['#5a3a24','#3f2814'], armor:true, legs:L_(['#4a3220','#33241a'],['#3a2a1d','#281c13']), shoes:{c:'#3a2414',sole:'#120a05',tall:true}, head:'bald', belt:'#c0392b', skin:['#e6e0d8','#c9c0b4','#9a9084']}}
 ];
 const OPTS = [['outfit','Outfit',OUTFITS],['preset','Avatar',PRESETS],['head','Hair / hat',HEADS],['legs','Legwear',LEGS],['shoes','Shoes',SHOES],['skin','Skin tone',SKINS]];
 for (const [k,,list] of OPTS) if (!(avatar[k] >= 0 && avatar[k] < list.length)) avatar[k] = 0;
@@ -2574,7 +2579,7 @@ cv.addEventListener('pointerdown', () => { if (state === 'intro') startPlay(); e
 
 /* ================= sizing & loop ================= */
 function resize(){
-  const w = innerWidth, h = innerHeight;
+  const w = Math.max(innerWidth,320), h = Math.max(innerHeight,240);
   DPR = Math.min(window.devicePixelRatio || 1, ultra() ? 2 : 1);
   while (DPR > 1 && w*h*DPR*DPR > 4.2e6) DPR -= .25;
   cv.width = Math.round(w*DPR); cv.height = Math.round(h*DPR); cv.style.width = w+'px'; cv.style.height = h+'px';
@@ -2611,7 +2616,7 @@ function frame(now){
   else if (state === 'end' && endWon){ player.vx = 120; player.x += player.vx*dt; player.anim += dt*6; player.onGround = true; }
   if (state !== 'pause'){ updateFx(dt); updSub(dt); }
   if (state === 'play' || state === 'pause' || state === 'intro' || state === 'bossintro') updateSR();
-  render(T);
+  try { render(T); } catch(e){ /* keep the loop alive */ }
   requestAnimationFrame(frame);
 }
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => resize());
