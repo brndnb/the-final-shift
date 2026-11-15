@@ -117,7 +117,9 @@ input[type=range]{width:100%;accent-color:var(--amber)}
 #tf{font-size:11px;letter-spacing:.06em}
 input{-webkit-user-select:text;user-select:text}
 .btn.sel{background:var(--amber);color:#1a1206;border-color:transparent}
-#botBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 14px);display:flex;align-items:center;gap:12px;background:var(--glass);border:1px solid rgba(255,180,94,.5);border-radius:12px;padding:8px 12px;font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;z-index:5}
+input.nm{font:600 22px var(--f-mono);color:var(--text);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;padding:14px 18px;width:min(420px,100%);box-sizing:border-box}
+.lbTable{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:8px 14px;font:500 13px var(--f-mono);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.lbTable b{font:600 10px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 input.code{font:600 26px var(--f-mono);letter-spacing:.4em;text-transform:uppercase;color:var(--text);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;padding:14px 18px;width:min(320px,100%);box-sizing:border-box}
 input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
 @media (max-width:860px){ .floors{grid-template-columns:repeat(3,minmax(0,1fr))} }
@@ -158,7 +160,6 @@ input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
   <div class="top"><b id="bossName">THE CEO</b><span id="bossSub"></span></div>
   <div class="segs" id="bossSegs"></div>
 </div>
-<div id="botBar" hidden><span id="botTxt">Bot speedrun</span><button class="icon-btn" id="botSpd" type="button">Speed 1x</button><button class="icon-btn" id="botDiff" type="button">Normal</button><button class="icon-btn" id="botStop" type="button">Stop</button></div>
 <div id="introCard" hidden>
   <div class="eyebrow" id="inFloor"></div>
   <h2 id="inName"></h2>
@@ -182,7 +183,6 @@ input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
     <div class="menu" id="menuPost" hidden>
       <button class="btn" id="btnFloors" type="button">Floors</button>
       <button class="btn ghost" id="btnInf" type="button">Infinite Levels</button>
-      <button class="btn ghost" id="btnBot" type="button">Bot speedrun</button>
       <button class="btn ghost" id="btnAvatar" type="button">Avatar</button>
       <button class="btn ghost" id="btnSettings2" type="button">Settings</button>
       <button class="btn ghost danger" id="btnReset" type="button">Reset progress</button>
@@ -198,7 +198,7 @@ input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
     <div class="set"><label for="sfxVol">Sound effects</label><input type="range" id="sfxVol" min="0" max="100" step="1"><output id="sfxOut">80</output></div>
     <div class="set"><label for="musVol">Music</label><input type="range" id="musVol" min="0" max="100" step="1"><output id="musOut">50</output></div>
     <div class="set"><label>Graphics</label><span class="note" id="gfxNote">Bloom, depth of field, reflections and film grain.</span><button class="icon-btn" id="gfxBtn" type="button">Ultra</button></div>
-    <div class="row"><button class="btn" id="setBack" type="button">Back</button></div>
+    <div class="row"><button class="btn" id="setBack" type="button">Back</button><button class="btn ghost" id="setLb" type="button" hidden>Leaderboard</button></div>
   </div>
 </div>
 
@@ -218,11 +218,42 @@ input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
 <div class="overlay" id="floorsScreen" hidden>
   <div class="card wide">
     <div class="eyebrow">Synergex Tower · Practice</div>
-    <h2>Pick a floor</h2>
+    <div class="row" style="justify-content:space-between"><h2>Pick a floor</h2><button class="btn" id="btnBM" type="button">Boss Mode</button></div>
     <p class="lede">Every floor records your best time and saves a ghost of that run. Race it. Hard and Extreme do not record times.</p>
     <div class="row" id="diffRow"><button class="btn ghost" data-d="0" type="button">Normal</button><button class="btn ghost" data-d="1" type="button">Hard</button><button class="btn ghost" data-d="2" type="button">Extreme</button></div>
     <div class="floors" id="floors"></div>
     <div class="row"><button class="btn ghost" id="flBack" type="button">Back</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="nameScreen" hidden>
+  <div class="card">
+    <div class="eyebrow">Badge photo · step 1 of 2</div>
+    <h2>Who are you?</h2>
+    <p class="lede">Pick a username (up to 25 characters). It appears on the leaderboard, so keep it clean.</p>
+    <input id="nameInput" class="nm" type="text" maxlength="25" autocomplete="off" spellcheck="false" aria-label="Username" placeholder="Username">
+    <div class="row"><button class="btn" id="nameGo" type="button">Continue</button><button class="btn ghost" id="nameBack" type="button">Back</button></div>
+    <span class="note" id="nameMsg"></span>
+  </div>
+</div>
+
+<div class="overlay" id="bmScreen" hidden>
+  <div class="card wide">
+    <div class="eyebrow">Floors · Boss Mode</div>
+    <h2>Boss Mode</h2>
+    <p class="lede">Every boss in the tower, back to back. Beat them all to clear the tier. Clear Easy, Hard and Extreme to unlock Impossible.</p>
+    <div class="floors" id="bmDiffs"></div>
+    <div class="row"><button class="btn ghost" id="bmBack" type="button">Back</button><span class="note" id="bmNote"></span></div>
+  </div>
+</div>
+
+<div class="overlay" id="lbScreen" hidden>
+  <div class="card wide">
+    <div class="eyebrow">Leaderboard</div>
+    <h2>Dan The I.T. Man</h2>
+    <p class="lede" id="lbNote"></p>
+    <div class="lbTable" id="lbTable"></div>
+    <div class="row"><button class="btn" id="lbBack" type="button">Back</button></div>
   </div>
 </div>
 
@@ -256,7 +287,7 @@ input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
   <div class="card">
     <div class="eyebrow">Status: Away</div>
     <h2>Paused</h2>
-    <div class="menu"><button class="btn" id="resumeBtn" type="button">Resume</button><button class="btn ghost" id="restartBtn" type="button">Restart floor (R)</button><button class="btn ghost" id="pMenuBtn" type="button">Main menu</button></div>
+    <div class="menu"><button class="btn" id="resumeBtn" type="button">Resume</button><button class="btn ghost" id="restartBtn" type="button">Restart floor (R)</button><button class="btn ghost" id="pSkipBtn" type="button" hidden>Skip floor (secret code)</button><button class="btn ghost" id="pLbBtn" type="button" hidden>Leaderboard</button><button class="btn ghost" id="pMenuBtn" type="button">Main menu</button></div>
   </div>
 </div>
 
@@ -286,7 +317,7 @@ input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
       <div><dt>Defeated on the way up</dt><dd id="fKills">0</dd></div>
       <div><dt>Days served</dt><dd>4,381</dd></div>
     </dl>
-    <div class="row"><button class="btn ghost danger" id="finReset" type="button">Reset</button><button class="btn" id="finBack" type="button">Back</button><button class="btn ghost" id="finInf" type="button">Enter the Annex</button><button class="btn ghost" id="finRun" type="button">Watch bot speedrun</button><span class="note" id="finNote"></span></div>
+    <div class="row"><button class="btn ghost danger" id="finReset" type="button">Reset</button><button class="btn" id="finBack" type="button">Back</button><button class="btn ghost" id="finInf" type="button">Enter the Annex</button><span class="note" id="finNote"></span></div>
   </div>
 </div>
 
@@ -310,13 +341,16 @@ let settings = Object.assign({sfx:.8, music:.5, gfx:'ultra'}, load('tfs-settings
 let quality = settings.gfx === 'fast' ? 'fast' : 'ultra';
 let DIFF = [0,1,2].includes(load('tfs-diff',0)) ? load('tfs-diff',0) : 0;
 const DSPD = () => [1,1.25,1.5][DIFF];
-function freshProgress(){ return { unlocked:0, finished:false, avatarLocked:false, bestTime:Array(NF).fill(0), bestScore:Array(NF).fill(0), kills:Array.from({length:NF}, () => ({})), infBest:0, infFloor:1, infKills:{} }; }
+function freshProgress(){ return { unlocked:0, finished:false, avatarLocked:false, bestTime:Array(NF).fill(0), bestScore:Array(NF).fill(0), kills:Array.from({length:NF}, () => ({})), infBest:0, infFloor:1, infKills:{}, username:'', cheat:false, bm:[false,false,false,false], dan:false }; }
 let progress = load('tfs-progress', null);
 if (!progress || !Array.isArray(progress.bestTime) || progress.bestTime.length !== NF) progress = freshProgress();
 if (!Array.isArray(progress.kills) || progress.kills.length !== NF) progress.kills = Array.from({length:NF}, () => ({}));
 if (typeof progress.infBest !== 'number') progress.infBest = 0;
 if (typeof progress.infFloor !== 'number' || progress.infFloor < 1) progress.infFloor = 1;
 if (!progress.infKills || typeof progress.infKills !== 'object') progress.infKills = {};
+if (typeof progress.username !== 'string') progress.username = '';
+if (!Array.isArray(progress.bm) || progress.bm.length !== 4) progress.bm = [false,false,false,false];
+progress.cheat = !!progress.cheat; progress.dan = !!progress.dan;
 let avatar = Object.assign({preset:0, outfit:0, head:0, legs:0, shoes:0, skin:0}, load('tfs-avatar', {}));
 const SR = { show: !!load('tfs-sr', false), level:0, run:0, runActive:false };
 let DPR = 1, S = 1, VW = 960, OY = 0, K = 1;
@@ -381,11 +415,44 @@ const PRESETS = [
   {name:'Thor', look:{t:['#6b7380','#9aa3b0','#b8c0cc'], s:['#9aa3b0','#6b7380'], b:['#6b7380','#4f5661'], cape:'#c0392b', armor:true, beard:'#b8863a', chest:'#6fd3ff', legs:L_(['#4a3220','#33241a'],['#3a2a1d','#281c13']), shoes:{c:'#4a3220',sole:'#1a1008',tall:true}, head:'long', belt:'#e2b13c'}},
   {name:'Ash Warrior', look:{t:['#5a3a24','#7a5232','#946840'], s:['#7a5232','#5a3a24'], b:['#5a3a24','#3f2814'], armor:true, legs:L_(['#4a3220','#33241a'],['#3a2a1d','#281c13']), shoes:{c:'#3a2414',sole:'#120a05',tall:true}, head:'bald', belt:'#c0392b', skin:['#e6e0d8','#c9c0b4','#9a9084']}}
 ];
+/* more costumes: unlocked after the main game. Historical figures are long-dead; no living people or living religions. */
+(() => {
+  const mk = (name, c, o) => { const k = o || {}, dk = c[0], md = c[1], lt = c[2];
+    PRESETS.push({ name, look: Object.assign({ t:[dk,md,lt], s:[md,dk], b:[dk,dk], legs:L_(k.lg || [dk,'#14141a'], k.lb || ['#14141a','#0b0b0e'], k.lx), shoes:k.sh || {c:'#1a1410',sole:'#000000'}, head:'short', belt:'#c9a227' }, k.x || {}) }); };
+  mk('Nikola Tesla', ['#1d1f26','#2e3340','#3d4352'], { x:{ jacket:{shirt:'#f4f1ea', tie:'#1a1a1a'}, chest:'#6fd3ff', head:'short' } });
+  mk('Leonardo da Vinci', ['#7a3b2e','#a05a44','#c27a5e'], { x:{ robe:'#8a4a34', beard:'#cfcfcf', head:'long' } });
+  mk('Cleopatra', ['#c9a227','#e2c35a','#ffe08a'], { x:{ head:'long', scarf:'#2563d9', earrings:true, chest:'#2563d9' } });
+  mk('Napoleon', ['#16223d','#22345c','#2c4170'], { sh:{c:'#1a1410',sole:'#000000',tall:true}, x:{ head:'tricorn', jacket:{shirt:'#f4efe4'}, buttons:true } });
+  mk('Joan of Arc', ['#8a93a1','#c9ced8','#e9edf2'], { x:{ armor:true, head:'knight', cape:'#2563d9' } });
+  mk('Julius Caesar', ['#8a1018','#b8222c','#e04a52'], { x:{ robe:'#e9eef6', chest:'#e2b13c', head:'short' } });
+  mk('Marie Curie', ['#d9dde4','#f4f6f9','#ffffff'], { lg:['#2a2c32','#17181c'], x:{ robe:'#f4f6f9', glasses:true, head:'long', chest:'#7dff6a' } });
+  mk('Athena', ['#8a93a1','#c9ced8','#e9edf2'], { x:{ armor:true, head:'knight', cape:'#2563d9', chest:'#ffd34d' } });
+  mk('Poseidon', ['#1f6f8a','#2fa3c4','#6fd3ff'], { x:{ head:'curly', beard:'#cfe8fb', chest:'#6fd3ff' } });
+  mk('Hades', ['#1a1230','#2e1f55','#4a3380'], { x:{ head:'long', cape:'#2a1a4a', beard:'#2a1d15', chest:'#8fe9ff' } });
+  mk('Medusa', ['#1f5a2a','#2f8a42','#5acd6a'], { x:{ head:'curly', chest:'#ffd34d', skin:['#8fc77a','#6aa85a','#4a8a3a'] } });
+  mk('Hermes', ['#c9a227','#e2c35a','#ffe08a'], { sh:{c:'#e2c35a',sole:'#8a6e14'}, x:{ head:'cap', chest:'#ffffff' } });
+  mk('Ares', ['#7a1018','#a82028','#d6402f'], { x:{ armor:true, head:'knight', cape:'#7a1018' } });
+  mk('Odin', ['#1d3a6e','#2f5aa8','#4a7ad0'], { x:{ eyepatch:true, head:'fedora', beard:'#cfcfcf', cape:'#1d3a6e' } });
+  mk('Loki', ['#12301f','#1f6b3a','#2fa05a'], { x:{ head:'long', cape:'#14572c', chest:'#ffd34d' } });
+  mk('Freya', ['#8a2a5a','#b8457a','#d96aa0'], { x:{ head:'long', armor:true, cape:'#c9a227' } });
+  mk('Hel', ['#101018','#2a2a3a','#44445a'], { x:{ head:'long', cape:'#101018', skin:['#e6e8f0','#c0c4d4','#9096aa'] } });
+  mk('Sin: Pride', ['#b8941f','#e2b13c','#ffd966'], { x:{ cape:'#8a3ee0', chest:'#ffffff', head:'short' } });
+  mk('Sin: Greed', ['#1f5a2a','#2f8a42','#5acd6a'], { x:{ head:'fedora', chest:'#ffd34d' } });
+  mk('Sin: Lust', ['#7a1030','#c0204a','#f0507a'], { x:{ head:'long', scarf:'#f0507a' } });
+  mk('Sin: Envy', ['#1d5a3a','#2f8a5a','#5acd8f'], { x:{ hood:true, head:'short' } });
+  mk('Sin: Gluttony', ['#6b4a2a','#a8742e','#d9a24a'], { x:{ head:'chef', buttons:true } });
+  mk('Sin: Wrath', ['#2a0a0c','#7a1018','#c0392b'], { x:{ armor:true, head:'bald', chest:'#ffb45e', skin:['#d9604a','#b8402e','#8a2a1c'] } });
+  mk('Sin: Sloth', ['#4a5568','#718096','#a0aec0'], { sh:{c:'#c9a85a',sole:'#8a6e14'}, x:{ hood:true, head:'beanie' } });
+  mk('Mic Dropper', ['#1a1a1a','#3a3a3a','#555555'], { lg:['#3d5d90','#26426e'], lb:['#2c4670','#1b3052'], sh:{c:'#f4f4f4',sole:'#c9ced8'}, x:{ head:'cap', chest:'#ffd34d', glasses:true } });
+  mk('Street Poet', ['#2a2a30','#44444c','#5e5e68'], { x:{ hood:true, head:'beanie', headset:true } });
+  mk('Beat Maker', ['#5a1ea8','#8a3ee0','#a864f0'], { x:{ head:'beanie', headset:true, chest:'#3dff8f' } });
+  mk('Rocket Founder', ['#14161b','#232730','#303642'], { x:{ jacket:{shirt:'#14161b'}, chest:'#6fd3ff', jetpack:true } });
+})();
 const OPTS = [['outfit','Outfit',OUTFITS],['preset','Avatar',PRESETS],['head','Hair / hat',HEADS],['legs','Legwear',LEGS],['shoes','Shoes',SHOES],['skin','Skin tone',SKINS]];
 for (const [k,,list] of OPTS) if (!(avatar[k] >= 0 && avatar[k] < list.length)) avatar[k] = 0;
 function resolveLook(av){
   const sk = (SKINS[av.skin] || SKINS[0]).c;
-  if (av.preset > 0 && PRESETS[av.preset]) return Object.assign({skin:sk, glasses:false, headset:false, belt:'#2a1f18'}, PRESETS[av.preset].look);
+  if (av.preset > 0 && PRESETS[av.preset] && progress.finished) return Object.assign({skin:sk, glasses:false, headset:false, belt:'#2a1f18'}, PRESETS[av.preset].look);
   const O = OUTFITS[av.outfit] || OUTFITS[0];
   return { t:O.t, s:O.s, b:O.b, lanyard:O.lanyard, collar:O.collar, jacket:O.jacket, hood:O.hood, vest:O.vest, hivis:O.hivis, legs:LEGS[av.legs] || LEGS[0], shoes:SHOES[av.shoes] || SHOES[0], skin:sk, head:(HEADS[av.head] || HEADS[0]).id, glasses:true, headset:true, belt:O.hood ? null : '#2a1f18' };
 }
@@ -607,7 +674,7 @@ function infClear(){
   $('endReason').textContent = `${killed} obstacles defeated on this floor. ${ahead}`;
   fillStats(); $('endPrimary').textContent = `Next: Floor ${next}`; $('endPrimary').onclick = () => beginInf(next);
   $('endNote').textContent = newBest ? 'New best floor.' : `Best floor ${progress.infBest}`;
-  setTimeout(() => { if (state === 'end' && !BOT.on){ show('end'); $('endPrimary').focus(); } }, 2500);
+  setTimeout(() => { if (state === 'end'){ show('end'); $('endPrimary').focus(); } }, 2500);
 }
 function beginInf(n){ INF.n = n; beginLevel(-1); }
 function openInf(){
@@ -622,8 +689,8 @@ function openSecret(){ wakeAudio(); state = 'secret'; $('secretInput').value = '
 function trySecret(){
   const v = $('secretInput').value.trim().toUpperCase();
   if (v === 'TGOE'){
-    progress.finished = true; progress.avatarLocked = false; progress.unlocked = 14; save('tfs-progress', progress);
-    sfx.power(); $('secretMsg').textContent = 'Code accepted. Floors, avatar changes, best times with ghosts and Infinite Levels are unlocked.';
+    progress.finished = true; progress.avatarLocked = false; progress.unlocked = 14; progress.cheat = true; save('tfs-progress', progress);
+    sfx.power(); $('secretMsg').textContent = 'Code accepted. Floors, avatars and Infinite Levels are unlocked, and you can skip floors from the pause menu. This save will not appear on the leaderboard.';
     setTimeout(() => { if (state === 'secret') openTitle(); }, 1600);
   } else { sfx.clank(); $('secretMsg').textContent = v ? 'That code does nothing.' : 'Type a code first.'; }
 }
@@ -636,7 +703,8 @@ let player, boss = null, minis = [], arena = false, arenaDone = false, arenaL = 
 let score = 0, coffees = 0, killed = 0, killsByType = {}, lives = 3, lastPing = 0;
 let CS = null, ICS = null, BI = null, ghost = null, ghostRec = [], ghostAcc = 0;
 let INF = { on:false, n:1, kills:{} }, BLINES = null;
-let ELEV = null, BOT = { on:false, i:0, total:0, lastX:0, stuck:0, wait:0, speed:1, deaths:0, acc:0, stall:0, lx:0, sig:0, sigT:0, li:-1, fr:0 };
+let ELEV = null, BMCS = null, QUIET = false, BM = { on:false, d:0, i:0, list:[], lv:null, prev:0, skipped:false };
+const SEEN = new Set();
 const input = { l:false, r:false, j:false, d:false };
 
 function makeEnemy([type,x,y], i){
@@ -655,7 +723,7 @@ function buildLevel(i, custom){
   for (const [type,x,y,w,h] of LV.plats) solids.push({type,x,y,w,h: h || ((type==='desk'||type==='walk') ? 12 : GY-y), oneWay: type==='desk'||type==='walk'});
   for (const [x,y,item] of LV.blocks) solids.push({type:'block',x,y,w:34,h:34,item,used:false,bump:0});
   arena = false; arenaDone = false; minis = []; boss = null;
-  if (LV.kind === 'ceo'){ solids.push({type:'wall',x:ROOM_R,y:-300,w:400,h:GY+300,style:'wood'}); arenaL = ROOM_X - 24; arenaR = ROOM_R; boss = makeCEO(); if (LV.inf){ boss.hp = boss.max = Math.min(30, 9 + 3*(LV.bossNo - 1)); boss.look = LV.bossLook; } else boss.hp = boss.max = 9 + 3*DIFF; }
+  if (LV.kind === 'ceo'){ solids.push({type:'wall',x:ROOM_R,y:-300,w:400,h:GY+300,style:'wood'}); arenaL = ROOM_X - 24; arenaR = ROOM_R; boss = makeCEO(); if (LV.inf){ boss.hp = boss.max = Math.min(30, 9 + 3*(LV.bossNo - 1) + 3*DIFF); boss.look = LV.bossLook; } else boss.hp = boss.max = 9 + 3*DIFF; }
   if (LV.kind === 'mini'){ solids.push({type:'wall',x:LV.arenaR,y:-300,w:24,h:GY+300,exit:true}); arenaL = LV.arenaX - 24; arenaR = LV.arenaR;
     minis = LV.mini === 'security' ? [makeMini('guard', LV.arenaX + 760), makeMini('guard', LV.arenaX + 920)] : [makeMini('ray', LV.arenaX + 860), makeMini('sue', LV.arenaX + 640)]; }
   enemies = LV.enemies.map(makeEnemy);
@@ -754,6 +822,7 @@ const sfx = {
   shield(){ tone(1600,.25,'sine',.14,400); tone(300,.2,'triangle',.12); },
   bump(){ tone(180,.08,'square',.12,120); },
   ding(){ tone(1568,.5,'sine',.14); tone(2093,.8,'sine',.1,null,.12); },
+  whoosh(){ tone(200,.45,'sawtooth',.05,900); tone(900,.4,'sine',.03,200,.05); },
   throw(){ tone(700,.1,'triangle',.1,300); },
   clank(){ tone(260,.08,'square',.1,180); },
   shoot(){ tone(500,.1,'square',.06,900); },
@@ -1567,7 +1636,7 @@ function drawEntities(t){
   g.globalAlpha = 1; g.restore();
 }
 function drawPost(t){
-  const g = ctx, term = CS && ((CS.t > 2.6 && CS.t < 11.2) || CS.t >= 19.2);
+  const g = ctx, term = (CS && ((CS.t > 2.6 && CS.t < 11.2) || CS.t >= 19.2)) || BMCS;
   if (!term && !ICS) drawTiled(layers.fg, 1.4);
   if (ultra() && !term && !ICS){
     const sx = VW*.78, sy = 372, cx = VW/2, cy = VH/2;
@@ -1597,6 +1666,7 @@ function render(t){
   ctx.setTransform(K,0,0,K,ox*K,OY*DPR + oy*K);
   ctx.save(); ctx.beginPath(); ctx.rect(0,0,VW,VH); ctx.clip();
   if (ICS) drawIntroCS(ICS.t);
+  else if (BMCS) drawBMIntro(BMCS.t);
   else if (CS && CS.t > 2.6 && CS.t < 11.2) drawTerminal(CS.t - 2.6);
   else if (CS && CS.t >= 19.2) drawEpilogue(CS.t - 19.2);
   else { drawEnvironment(t); drawEntities(t); }
@@ -1855,6 +1925,12 @@ function drawIntroCS(t){
   let i = 0; while (i < cuts.length && t >= cuts[i]) i++;
   scenes[i](g, t - (i ? cuts[i-1] - ICS_X : 0));
   if (i < cuts.length && t > cuts[i] - ICS_X){ g.save(); g.globalAlpha = ease((t - (cuts[i] - ICS_X))/ICS_X); scenes[i+1](g, t - (cuts[i] - ICS_X)); g.restore(); }
+  { const dr = rng(21); g.save(); g.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 34; i++){ const x = (dr()*VW + t*(6 + dr()*10)) % VW, y = (dr()*VH + Math.sin(t*.7 + i)*14 + t*(2 + dr()*4)) % VH; g.fillStyle = `rgba(255,220,170,${.12 + .1*Math.sin(t*2 + i)})`; ell(g,x,y,1.4,1.4); g.fill(); }
+    for (const cut of ICS_CUTS){ const dd = Math.abs(t - cut); if (dd < .3){ g.fillStyle = `rgba(255,200,140,${.28*(1 - dd/.3)})`; g.fillRect(0,0,VW,VH); } } g.restore(); }
+  { const ca = ease(ph(t,.9,1.6))*(1 - ease(ph(t,3.0,3.7))), cb = ease(ph(t,11.4,12.0))*(1 - ease(ph(t,13.2,13.8)));
+    if (ca > .01){ g.save(); g.globalAlpha *= ca; txt(g,'4,381 DAYS ON THE NIGHT SHIFT',VW/2,98,'600 13px "IBM Plex Mono",monospace','#ffd9a0'); g.restore(); }
+    if (cb > .01){ g.save(); g.globalAlpha *= cb; txt(g,'NEVER READ THE TERMS',VW/2,98,'600 13px "IBM Plex Mono",monospace','#ffd9a0'); g.restore(); } }
   const vg = g.createRadialGradient(VW/2,VH/2,VH*.35,VW/2,VH/2,Math.max(VW,VH)*.75); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.45)'); g.fillStyle = vg; g.fillRect(0,0,VW,VH);
   if (t < .9){ g.fillStyle = `rgba(0,0,0,${1 - ease(t/.9)})`; g.fillRect(0,0,VW,VH); }
   if (t > ICS_LEN - .9){ g.fillStyle = `rgba(0,0,0,${ease(ph(t,ICS_LEN - .9,ICS_LEN))})`; g.fillRect(0,0,VW,VH); }
@@ -1924,7 +2000,8 @@ const CS_LINES = [
   [24.4,'You','And everything I knocked aside on the way up? It gets to leave too.'],
   [28.6,null,null],
   [29.9,'Phone','New notification · Synergex Annex: Infinite Levels unlocked.'],
-  [34.6,null,null]
+  [32.2,'Voicemail','We are not done. Come back to the floors. - The Board'],
+  [35.4,null,null]
 ];
 function drawElevator(){
   const e = ELEV.t, a = ease(ph(e,1.3,1.8)); if (a <= 0) return;
@@ -1961,129 +2038,141 @@ function drawEpilogue(t){
     if (a <= 0 || x > VW + 80) return; g.save(); g.globalAlpha *= a; drawEnemy(g,{type:ty,x:x-w/2,y:y-h,w,h,look:1,seed:i,count:0,dir:1,charging:false,alertT:0,state:'hop',dead:false},t); g.restore(); });
   if (t > .5){ const [px,pvx] = kpath([[.5,doorX],[4,VW*.58]], t); g.save(); g.translate(px, FL + 6); g.scale(SC,SC);
     drawPlayer(g, csPerson(0,0,{pose: t > 4.6 && t < 6.6 ? 'stretch' : undefined, prop: t > 9.5 ? 'phone' : null, vx:pvx, anim:t*9}), t, PLOOK); g.restore(); }
+  if (t > 11.6){ const a = ease(ph(t,11.6,12.8)); for (let c = 0; c < 6; c++){ const wx = tx + 12 + c*38, wy = FL - th + 14; g.fillStyle = `rgba(190,30,45,${.5*a})`; g.fillRect(wx,wy,28,34); g.fillStyle = `rgba(6,6,10,${a})`; g.beginPath(); rr(g,wx+7,wy+14,14,20,3); g.fill(); ell(g,wx+14,wy+10,5,5); g.fill(); g.fillStyle = `rgba(255,70,80,${a})`; g.fillRect(wx+11,wy+9,2,2); g.fillRect(wx+15,wy+9,2,2); } }
   if (dawn > .05){ g.save(); g.globalCompositeOperation = 'lighter'; for (let i = 0; i < 5; i++){ g.fillStyle = `rgba(255,220,160,${.05*dawn})`; g.beginPath(); g.moveTo(sx,sy); g.lineTo(sx - 900, FL - 260 + i*120); g.lineTo(sx - 900, FL - 200 + i*120); g.closePath(); g.fill(); } g.restore(); }
   if (t > 2){ g.save(); g.globalAlpha *= ease(ph(t,2,3)); g.textAlign = 'right'; g.font = '800 30px "Bricolage Grotesque",sans-serif'; g.fillStyle = '#fff'; glow(g,'rgba(0,0,0,.7)',10); g.fillText('5:00:01 PM', VW - 36, 84); g.restore(); }
   if (t > 10.5){ const a = ease(ph(t,10.5,11.3)), cx = Math.min(VW*.58 + 70, VW - 270), cy = 130 - (1 - a)*20;
     g.save(); g.globalAlpha *= a; glow(g,'rgba(255,180,94,.7)',16 + 6*Math.sin(t*6)); g.fillStyle = 'rgba(10,14,24,.92)'; g.beginPath(); rr(g,cx,cy,250,104,14); g.fill(); g.shadowBlur = 0;
     g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#ffb45e'; g.font = '600 10px "IBM Plex Mono",monospace'; g.fillText('SYNERGEX ANNEX · NOW', cx+16, cy+22);
     g.fillStyle = '#fff'; g.font = '800 19px "Bricolage Grotesque",sans-serif'; g.fillText('Infinite Levels unlocked', cx+16, cy+50); g.fillStyle = '#9aa8c0'; g.font = '500 12px "IBM Plex Mono",monospace'; g.fillText('The Annex has no last floor.', cx+16, cy+76); g.restore(); }
+  if (t > 12.6){ const a = ease(ph(t,12.6,13.4)), cx = Math.min(VW*.58 + 70, VW - 270), cy = 250; g.save(); g.globalAlpha *= a; g.fillStyle = 'rgba(40,8,14,.92)'; g.beginPath(); rr(g,cx,cy,250,64,12); g.fill(); g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#ff8a90'; g.font = '600 10px "IBM Plex Mono",monospace'; g.fillText('MISSED CALL · THE BOARD (10)',cx+16,cy+20); g.fillStyle = '#fff'; g.font = '700 14px "Bricolage Grotesque",sans-serif'; g.fillText('"We are not done."',cx+16,cy+44); g.restore(); }
   if (t > 14.3){ const k = ease(ph(t,14.3,15.3)); g.fillStyle = `rgba(5,8,16,${.55*k})`; g.fillRect(0,0,VW,VH); g.save(); g.globalAlpha *= k; glow(g,'rgba(255,180,94,.6)',20); txt(g,'THE FINAL SHIFT',VW/2,VH/2 - 10,'800 64px "Bricolage Grotesque",sans-serif','#fff'); g.shadowBlur = 0; txt(g,'DAY 4,382 · THE ANNEX IS OPEN',VW/2,VH/2 + 38,'600 14px "IBM Plex Mono",monospace','#ffb45e'); g.restore(); }
   if (t < 1.2){ g.fillStyle = `rgba(255,244,220,${1 - ease(t/1.2)})`; g.fillRect(0,0,VW,VH); }
 }
-/* bot speedrun demo: runs invincible at 3x speed and never stops (the game has no real glitches to exploit) */
-/* Bot speedrun player: no invincibility. Every 1/30 s it simulates a dozen short plans (run, early/late jumps, hold for bigger bounces,
-   wait, back off, double jump) one second ahead against predicted enemy and projectile motion, and takes the fastest safe one. */
-const BOT_POL = (() => {
-  const a = [{wait:0,d0:1,jumpAt:null,hold:.45}, {wait:0,d0:1,jumpAt:null,hold:0}];
-  for (const jt of [0,.05,.1,.15,.2,.25,.3,.35,.4,.5]) for (const hold of [.12,.45]) a.push({wait:0,d0:1,jumpAt:jt,hold});
-  for (const d0 of [0,-1]){ a.push({wait:.3,d0,jumpAt:null,hold:0}); a.push({wait:.3,d0,jumpAt:0,hold:.45}); a.push({wait:.6,d0,jumpAt:null,hold:0}); }
-  a.push({wait:0,d0:1,jumpAt:0,hold:.45,j2:.4}, {wait:0,d0:1,jumpAt:.1,hold:.45,j2:.5});
-  return a;
-})();
-const BOT_ITEM = { gear:150, energy:500, dnd:350, headphones:250, battery:150, ram:120, toolkit:100 };
-function botRollout(P, pol, C){
-  const h = C.h, s = {x:P.x,y:P.y,w:P.w,h:P.h,vx:P.vx,vy:P.vy,onGround:P.onGround,coyote:P.coyote,drop:0,prevBottom:P.y+P.h};
-  let stomps = 0, tgt = 0, dmgK = -1, fell = false, bonus = 0, jumped = false, j2 = pol.j2 === undefined, air = P.airJumps;
-  const dead = new Set(), got = new Set(), fall = new Map();
-  for (let k = 0; k < C.steps; k++){
-    const t = k*h, dir = t < pol.wait ? pol.d0 : 1;
-    const hold = pol.jumpAt === null ? t < pol.hold : (t >= pol.jumpAt && t < pol.jumpAt + pol.hold);
-    s.vx += (dir*C.spd - s.vx)*Math.min(1,(s.onGround ? 16 : 8)*h);
-    s.coyote = s.onGround ? .1 : s.coyote - h;
-    if (!jumped && pol.jumpAt !== null && t >= pol.jumpAt - 1e-9 && t < pol.jumpAt + .13 && s.coyote > 0){ s.vy = -JUMP*C.jm; s.coyote = 0; s.onGround = false; jumped = true; }
-    else if (!j2 && t >= pol.j2 && !s.onGround && air > 0 && C.ram){ s.vy = -JUMP*.92; air--; j2 = true; }
-    if (!hold && s.vy < -340) s.vy = -340;
-    s.prevBottom = s.y + s.h;
-    moveBody(s, h, false);
-    if (s.y > VH + 60){ fell = true; break; }
-    let hurt = false;
-    for (const o of C.F){
-      if (dead.has(o)) continue;
-      let ex = o.x + o.vx*t, ey = o.y;
-      if (o.fly){ ex = o.x + o.dirx*o.dr*t; ey = o.baseY + Math.sin(o.ph + 3*t)*o.amp; }
-      else if (o.hang){ if (!fall.has(o) && Math.abs(s.x + s.w/2 - (o.x + o.w/2)) < 150) fall.set(o, t); if (fall.has(o)){ const fd = t - fall.get(o); ey = Math.min(o.gy, o.y + .5*GRAV*fd*fd); } }
-      const hb = {x:ex + o.ix, y:ey + o.iy, w:o.w - 2*o.ix, h:o.h - o.iy - o.ib};
-      if (!overlap(s,hb)) continue;
-      if (!o.noStomp && s.vy > 0 && s.prevBottom <= hb.y + o.sl){ dead.add(o); stomps++; tgt += o.value; s.vy = hold ? -720 : -470; s.y = hb.y - s.h; s.onGround = false; }
-      else if (!o.harmless) hurt = true;
-    }
-    for (const z of C.H){ if (overlap(s,{x:z.x + z.vx*t - 6, y:z.y + z.vy*t + .5*z.grav*t*t - 6, w:z.w + 12, h:z.h + 12})) hurt = true; }
-    if (hurt && dmgK < 0 && !C.inv) dmgK = k;
-    for (const it of C.I){ if (!got.has(it) && Math.abs(s.x + s.w/2 - it.x) < 20 && Math.abs(s.y + s.h/2 - it.y) < 38){ got.add(it); bonus += it.v; } }
+/* ================= usernames (with a content filter) ================= */
+const rot13 = s => s.replace(/[a-z]/g, c => String.fromCharCode((c.charCodeAt(0) - 97 + 13) % 26 + 97));
+const BAD_SUB = 'shpx fuvg ovgpu nffubyr onfgneq qvpx pbpx chffl phag juber fyhg cvff cbea encr anmv uvgyre cravf intvan nahf obbo gvgf avccyr grfgvpyr fpebghz pyvgbevf ihyin travgny qvyqb wvmm frzra avttre avttn sntgbg ergneq genaal puvax fcvp xvxr frk gvgvrf obbof qvpxurnq jnax'.split(' ').map(rot13);
+const BAD_TOK = 'nff phz sna xxx nany gvg'.split(' ').map(rot13);
+const LEET = {'0':'o','!':'i','3':'e','4':'a','@':'a','5':'s','$':'s','7':'t','+':'t','8':'b'};
+const nameNorm = (s, one) => s.toLowerCase().replace(/[0!3457@$+8]/g, c => LEET[c]).replace(/1/g, one).replace(/[^a-z]/g, '');
+const nameCol = s => s.replace(/(.)\1+/g, '$1');
+const NAME_OK = ['scunthorpe','peacock','hancock','cockpit','cocktail','dickens','uranus','janus','essex','sussex','sextant','sexton','grape','drape','trapeze','therapeutic','spice','spicy','spicer','semenov'];
+function nameBad(raw){
+  const toks = raw.replace(/([a-z])([A-Z])/g, '$1 $2').split(/[^a-zA-Z0-9@$!+]+/);
+  for (const one of ['i','l']){
+    let n = nameNorm(raw, one); for (const w of NAME_OK) n = n.split(w).join('');
+    const c = nameCol(n);
+    if (BAD_SUB.some(w => n.includes(w) || (nameCol(w).length >= 4 && c.includes(nameCol(w))))) return true;
+    if (BAD_TOK.includes(n) || BAD_TOK.includes(c)) return true;
+    if (toks.some(t => { const k = nameNorm(t, one); return BAD_TOK.includes(k) || BAD_TOK.includes(nameCol(k)); })) return true;
   }
-  return {s, stomps, tgt, dmgK, fell, bonus};
+  return false;
 }
-function botThrow(){
-  const p = player; if (p.ammo <= 0 || p.throwCD > 0) return;
-  const cand = [];
-  if (boss && arena && boss.state !== 'defeated' && boss.state !== 'wait' && boss.state !== 'intro' && !boss.shielded) cand.push(boss);
-  if (arena) for (const m of minis) if (!m.dead) cand.push(m);
-  for (const e of enemies) if (!e.dead && e.active && (arena ? e.x > arenaL : (e.type === 'virus' || e.type === 'printer' || e.type === 'update'))) cand.push(e);
-  for (const c of cand){ const dx = ((c.x + c.w/2) - (p.x + p.w/2))*p.face, dy = (c.y + c.h/2) - (p.y + 25); if (dx > 60 && dx < 420 && Math.abs(dy) < 90){ throwGear(); return; } }
+function openName(){ wakeAudio(); state = 'name'; $('nameInput').value = progress.username || ''; $('nameMsg').textContent = ''; show('name'); $('nameInput').focus(); }
+function nameSubmit(){
+  const v = $('nameInput').value.trim();
+  if (v.length < 2) $('nameMsg').textContent = 'Use at least 2 characters.';
+  else if (v.length > 25) $('nameMsg').textContent = 'Use 25 characters or fewer.';
+  else if (nameBad(v)) $('nameMsg').textContent = 'That name is not allowed. Pick something else.';
+  else { progress.username = v; save('tfs-progress', progress); openAvatar('new'); }
 }
-function botThink(){
-  const p = player, pcx = p.x + p.w/2, sm = LV.speed * DSPD(), F = [], H = [], I = [];
-  if (arena){ const sig = enemies.filter(e => !e.dead).length*1000 + (boss ? boss.hp : 0)*10 + minis.reduce((a,m) => a + Math.max(0,m.hp), 0); if (sig !== BOT.sig){ BOT.sig = sig; BOT.sigT = 0; } else BOT.sigT += 1/30; if (BOT.sigT > 20){ BOT.sigT = 0; botRetry(); return; } }
-  if (!arena){ if (p.x - BOT.lx < 2) BOT.stall += 1/30; else BOT.stall = Math.max(0, BOT.stall - 1/15); } else BOT.stall = 0; BOT.lx = p.x;
-  for (const e of enemies){
-    if (e.dead || !e.active || e.x > p.x + 800 || e.x + e.w < p.x - 300) continue;
-    const t = e.type, dx = pcx - (e.x + e.w/2);
-    const o = { x:e.x, y:e.y, w:e.w, h:e.h, vx:0, ix:3, iy:3, ib:2, sl:12, value:25, fly:false, noStomp:t === 'virus', harmless:false };
-    if (t === 'chat' || t === 'spam' || t === 'virus' || t === 'invite' || t === 'call') o.vx = e.vx;
-    else if (t === 'update'){ o.vx = e.stun > 0 ? 0 : e.vx; o.harmless = e.stun > 0; }
-    else if (t === 'meeting'){ const sees = Math.abs(dx) < 300 + sm*60 && Math.abs((p.y + p.h) - (e.y + e.h)) < 70; o.vx = e.charging ? e.vx : (sees ? Math.sign(dx)*235*sm : e.vx); }
-    else if (t === 'mail' || t === 'popup'){ o.fly = true; o.baseY = e.baseY; o.ph = e.ph; o.amp = t === 'mail' ? 34 : 10; o.dr = (t === 'mail' ? 72 : (Math.abs(dx) > 300 ? 30 : 0))*sm; o.dirx = Math.sign(dx) || 1; }
-    if (t === 'invite' && e.state === 'hang'){ o.hang = true; o.gy = GY - e.h; }
-    F.push(o);
+
+/* ================= restart without replaying cutscenes ================= */
+function restartLevel(){ QUIET = true; beginLevel(LVI); QUIET = false; }
+
+/* ================= Boss Mode ================= */
+const BML = [[.8,'The CEO','So you beat me once.'],[3.1,'Ray','Per my last email: we are all still here.'],[5.0,'Sue','CAN EVERYONE HEAR US?'],[7.0,'The Board','Every one of us. One shift.'],[9.4,null,null]];
+function bmList(imp){ const a = [{k:'guards'},{k:'coworkers'},{k:'ceo'}]; for (let b = 1; b <= (imp ? 30 : 5); b++) a.push({k:'exec', b}); return a; }
+function bmCount(){ return BM.list.reduce((a,e) => a + (e.k === 'guards' || e.k === 'coworkers' ? 2 : 1), 0); }
+function bmLevel(enc){
+  let L;
+  if (enc.k === 'guards' || enc.k === 'coworkers'){
+    const src = FLOORS[enc.k === 'guards' ? 4 : 9], ax = src.arenaX;
+    L = Object.assign({}, src, { enemies:[], items:[], blocks:[], gaps:[], plats: src.plats.filter(p => p[1] >= ax - 60), cps:[60], goalX:null, signs:[], exits:[] });
+  } else {
+    L = infLevel(enc.k === 'ceo' ? 10 : enc.b*10);
+    if (enc.k === 'ceo') Object.assign(L, { bossName:'The CEO', bossShort:'THE CEO', bossLook:NPC.ceo, bossNo:1 });
+    L.signs = [];
   }
-  if (arena) for (const m of minis) if (!m.dead) F.push({x:m.x,y:m.y,w:m.w,h:m.h,vx:m.vx,ix:4,iy:6,ib:0,sl:16,value:300,fly:false,harmless:false});
-  if (boss && boss.state !== 'defeated' && boss.state !== 'wait' && boss.state !== 'intro') F.push({x:boss.x,y:boss.y,w:boss.w,h:boss.h,vx:boss.vx,ix:8,iy:10,ib:0,sl:18,value:boss.shielded ? 0 : 300,fly:false,harmless:!boss.standing});
-  for (const z of hostile) if (z.x > p.x - 300 && z.x < p.x + 800) H.push({x:z.x,y:z.y,w:z.w,h:z.h,vx:z.vx || 0,vy:z.vy || 0,grav:z.grav || 0});
-  for (const it of items) if (!it.taken && !(it.pop > 0) && Math.abs(it.x - p.x) < 600){ const v = BOT_ITEM[it.type] || 0; if (v) I.push({x:it.x,y:it.y,v}); }
-  let tx = null;
-  if (arena){ const cs = []; for (const e of enemies) if (!e.dead && e.x > arenaL && e.x < arenaR) cs.push(e.x + e.w/2); if (!cs.length) for (const m of minis) if (!m.dead) cs.push(m.x + m.w/2); if (!cs.length && boss && boss.state !== 'defeated' && boss.state !== 'wait') cs.push(boss.x + boss.w/2); if (cs.length) tx = cs.reduce((a,b) => Math.abs(b - pcx) < Math.abs(a - pcx) ? b : a); }
-  const sue = arena ? minis.find(m => m.kind === 'sue' && !m.dead) : null, rangedOK = !(sue && !enemies.some(e => !e.dead && e.x > arenaL && e.x < arenaR));
-  if (!rangedOK) tx = sue.x + sue.w/2;
-  const C = { h:1/60, steps:60, spd:RUN*(p.dnd > 0 ? 1.15 : 1)*(p.energy > 0 ? 1.3 : 1), jm:p.energy > 0 ? 1.12 : 1, ram:p.ram > 0, inv:p.inv > 0 || p.dnd > 0, F, H, I };
-  const saved = solids; solids = solids.filter(s => s.x < p.x + 900 && s.x + s.w > p.x - 400);
-  let best = BOT_POL[0], bs = -Infinity;
-  for (const pol of BOT_POL){
-    if (pol.j2 !== undefined && !C.ram) continue;
-    const r = botRollout(p, pol, C);
-    let sc; if (tx !== null){ const dd = Math.abs(r.s.x + 13 - tx); sc = (p.ammo > 0 && BOT.sigT < 5 && rangedOK) ? -Math.abs(dd - 300) : -dd; } else sc = r.s.x - p.x;
-    sc += r.stomps*25 + r.tgt + r.bonus;
-    if (r.dmgK >= 0) sc -= (BOT.stall > 2.5 ? 120 : 1e5) - r.dmgK*2;
-    if (BOT.deaths) sc += (Math.random() - .5)*30;
-    if (r.fell) sc -= 1e5;
-    if (sc > bs){ bs = sc; best = pol; }
-  }
-  solids = saved;
-  input.r = (best.wait > 0 ? best.d0 : 1) > 0; input.l = (best.wait > 0 ? best.d0 : 1) < 0;
-  if (best.jumpAt === 0 && (p.onGround || p.coyote > 0)){ p.jumpBuf = .13; input.j = true; }
-  else input.j = best.jumpAt === null ? best.hold > 0 : (best.jumpAt === 0 && best.hold > 0);
-  if (arena && tx !== null && p.ammo > 0){ const dT = Math.sign(tx - pcx); if (Math.abs(tx - pcx) < 380 && p.face !== dT){ input.r = dT > 0; input.l = dT < 0; } }
-  botThrow();
-  const tt = $('botTxt'); if (tt){ const s = `Floor ${BOT.i + 1}/15 · ${['Normal','Hard','Extreme'][DIFF]} · ${lives} ${lives === 1 ? 'life' : 'lives'} · resets ${BOT.deaths} · ${fmtTime(BOT.total)}`; if (tt.textContent !== s) tt.textContent = s; }
+  L.bm = true; return L;
 }
-function botFloor(i){ if (i !== BOT.li){ BOT.fr = 0; BOT.li = i; } BOT.i = i; BOT.stuck = 0; BOT.stall = 0; BOT.sigT = 0; BOT.wait = 0; beginLevel(i); ghost = null; startPlay(); }
-function botNext(){ if (BOT.i < 14) botFloor(BOT.i + 1); }
-function botRetry(){ BOT.deaths++; BOT.fr++; if (BOT.fr > 40) botFail(); else botFloor(BOT.i); }
-function botFail(){
-  BOT.on = false; input.l = input.r = input.j = false; $('botBar').hidden = true; state = 'end'; endWon = false; ELEV = null; sfx.lose();
-  $('endEyebrow').textContent = 'Bot speedrun · ended'; $('endTitle').textContent = 'The bot gave up.'; $('endTitle').className = 'lose';
-  $('endReason').textContent = `Floor ${BOT.i + 1} on ${['Normal','Hard','Extreme'][DIFF]} beat the bot after ${BOT.fr - 1} tries (${fmtTime(BOT.total)} of game time so far). It plays for real with no invincibility, so some difficulties are genuinely hard.`;
-  fillStats(); $('sTime').textContent = fmtTime(BOT.total); $('endPrimary').textContent = 'Try again'; $('endPrimary').onclick = startBot; $('endNote').textContent = '';
+function bmStart(idx){ BM.i = idx; BM.lv = bmLevel(BM.list[idx]); BM.lv.floor = idx + 1; QUIET = true; beginLevel(-1); QUIET = false; }
+function startBM(d){
+  wakeAudio(); BM = { on:true, d, i:0, list:bmList(d === 3), lv:null, prev:DIFF, skipped:false };
+  DIFF = [0,1,2,2][d]; state = 'bmcs'; BMCS = { t:0, li:0 }; hideSub(); show(null); $('hud').hidden = true; $('touch').hidden = true; $('skipBtn').hidden = false; MUS.mode = 'boss';
+}
+function endBMCS(){ BMCS = null; $('skipBtn').hidden = true; hideSub(); bmStart(0); }
+function bmClear(){
+  sfx.win(); hostile = [];
+  if (BM.i >= BM.list.length - 1){ bmFinish(); return; }
+  const idx = BM.i; say('Boss Mode', `Boss ${idx + 1} of ${BM.list.length} down. Next up.`, 1.8);
+  setTimeout(() => { if (BM.on && state === 'end' && BM.i === idx) bmStart(idx + 1); }, 1800);
+}
+function bmFinish(){
+  const d = BM.d, names = ['Easy','Hard','Extreme','Impossible'], skipped = BM.skipped;
+  if (!skipped){ progress.bm[d] = true; if (d === 3) progress.dan = true; save('tfs-progress', progress); }
+  const nowUnlocked = !skipped && d < 3 && progress.bm.slice(0,3).every(Boolean);
+  DIFF = BM.prev; BM.on = false; state = 'end'; endWon = false; ELEV = null; hostile = []; MUS.mode = 'calm'; hideSub(); sfx.win();
+  $('endEyebrow').textContent = `Boss Mode · ${names[d]}`;
+  $('endTitle').textContent = skipped ? 'Run skipped.' : d === 3 ? 'Dan The I.T. Man.' : 'Boss Mode cleared.'; $('endTitle').className = 'win';
+  $('endReason').textContent = skipped ? 'You skipped bosses with the secret code, so this run does not count.' : d === 3 ? 'Every boss. Thirty-five of them. The title Dan The I.T. Man is yours, and the leaderboard is open from the pause menu and from Settings.' : nowUnlocked ? 'Easy, Hard and Extreme are done. Impossible is now unlocked in Boss Mode.' : `${names[d]} is cleared. Clear Easy, Hard and Extreme to unlock Impossible.`;
+  fillStats(); $('sCleared').textContent = String(bmCount()); $('endPrimary').textContent = 'Back to floors'; $('endPrimary').onclick = openFloors; $('endNote').textContent = '';
   show('end'); $('endPrimary').focus();
 }
-function startBot(){ wakeAudio(); BOT.on = true; BOT.total = 0; BOT.deaths = 0; BOT.speed = 1; SR.runActive = false; $('botBar').hidden = false; $('botDiff').textContent = ['Normal','Hard','Extreme'][DIFF]; $('botSpd').textContent = 'Speed 1x'; botFloor(0); }
-function botStop(){ BOT.on = false; input.l = input.r = input.j = false; $('botBar').hidden = true; openTitle(); }
-function botFinish(){
-  BOT.on = false; input.l = input.r = input.j = false; $('botBar').hidden = true; state = 'end'; endWon = false; ELEV = null; sfx.win();
-  $('endEyebrow').textContent = 'Bot speedrun · complete'; $('endTitle').textContent = 'Run complete.'; $('endTitle').className = 'win';
-  $('endReason').textContent = `The bot cleared all 15 floors and the CEO in ${fmtTime(BOT.total)} of game time. It played for real: ${[3,2,1][DIFF]} ${DIFF === 2 ? 'life' : 'lives'} per floor, no invincibility, and ${BOT.deaths} reset${BOT.deaths === 1 ? '' : 's'}. Tactics: never stop running, hold jump on every stomp for bigger bounces, route through energy drinks and shields, and throw IT gear at the bosses. The game has no real glitches to exploit.`;
-  fillStats(); $('sTime').textContent = fmtTime(BOT.total); $('endPrimary').textContent = 'Watch again'; $('endPrimary').onclick = startBot; $('endNote').textContent = '';
-  show('end'); $('endPrimary').focus();
+function openBM(){
+  state = 'bm'; const names = ['Easy','Hard','Extreme','Impossible'], sub = ['10 bosses · 3 lives each','10 bosses · 2 lives, faster foes','10 bosses · 1 life, much faster foes','35 bosses · 1 life each'];
+  const imp = progress.bm.slice(0,3).every(Boolean);
+  $('bmDiffs').innerHTML = names.map((n,i) => { const locked = i === 3 && !imp; return `<button class="floor" type="button" data-d="${i}" ${locked ? 'disabled' : ''}><span class="num">${i === 3 ? 'Final tier' : 'Tier ' + (i+1)}${progress.bm[i] ? '<em style="color:var(--ok)">Cleared</em>' : ''}</span><h3>${n}</h3><span class="meta">${locked ? 'Clear Easy, Hard and Extreme first' : sub[i]}</span></button>`; }).join('');
+  document.querySelectorAll('#bmDiffs .floor').forEach(b => b.onclick = () => { if (!b.disabled) startBM(+b.dataset.d); });
+  $('bmNote').textContent = progress.dan ? 'Title earned: Dan The I.T. Man' : '';
+  show('bm'); const f = document.querySelector('#bmDiffs .floor'); if (f) f.focus();
 }
+const bmLooks = () => [NPC.guard, NPC.guard, NPC.ray, NPC.sue, NPC.ceo, ...INF_BOSSES.map(b => Object.assign({}, NPC.ceo, { jacket:{shirt:'#eef2f8', tie:b[2]}, badge:b[2] }))];
+function drawBMIntro(t){
+  const g = ctx, FL = 420, looks = bmLooks(), n = looks.length;
+  g.fillStyle = lin(g,0,0,0,VH,['#06070c','#170a10','#0b0608']); g.fillRect(0,0,VW,VH);
+  g.fillStyle = lin(g,0,FL,0,VH,['#2a1a14','#0c0705']); g.fillRect(0,FL,VW,VH-FL);
+  g.fillStyle = '#1d120b'; g.beginPath(); rr(g,VW*.04,FL-16,VW*.92,18,6); g.fill(); g.fillStyle = '#c9a227'; g.fillRect(VW*.04,FL-16,VW*.92,2);
+  const pulse = .5 + .5*Math.sin(t*3);
+  g.save(); g.globalCompositeOperation = 'lighter'; const gr = g.createRadialGradient(VW/2,60,10,VW/2,60,VW*.7); gr.addColorStop(0,`rgba(255,40,60,${.16 + .08*pulse})`); gr.addColorStop(1,'rgba(255,40,60,0)'); g.fillStyle = gr; g.fillRect(0,0,VW,VH); g.restore();
+  for (let i = 0; i < n; i++){
+    const t0 = .5 + i*.42, k = ease(ph(t, t0, t0 + 1.4)); if (k <= 0) continue;
+    const tx = VW*(.07 + .86*i/(n - 1)), sx = i % 2 ? VW + 80 : -80, x = lerp(sx, tx, k), moving = k < 1, face = moving ? (x < tx ? 1 : -1) : (tx < VW/2 ? 1 : -1);
+    if (!moving){ g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = `rgba(255,70,80,${ease(ph(t, t0 + 1.4, t0 + 2.2))*.18})`; g.beginPath(); g.moveTo(x - 6, 0); g.lineTo(x + 6, 0); g.lineTo(x + 46, FL); g.lineTo(x - 46, FL); g.closePath(); g.fill(); g.restore(); }
+    g.save(); g.translate(x, FL + 4); g.scale(1.45,1.45); drawPlayer(g, csPerson(0,0,{face, vx: moving ? 170 : 0, anim: t*9 + i, prop:null}), t, looks[i]); g.restore();
+  }
+  const ya = ease(ph(t,5.2,6.2)); if (ya > 0){ g.save(); g.globalAlpha *= ya; g.translate(VW/2, FL + 60); g.scale(1.9,1.9); drawPlayer(g, csPerson(0,0,{face:1,prop:null}), t, PLOOK); g.restore(); }
+  const tk = ease(ph(t,8.2,9.2)); if (tk > 0){ g.fillStyle = `rgba(5,6,10,${.5*tk})`; g.fillRect(0,0,VW,VH); g.save(); g.globalAlpha *= tk; glow(g,'rgba(255,60,70,.7)',22); txt(g,'BOSS MODE',VW/2,VH/2 - 6,'800 72px "Bricolage Grotesque",sans-serif','#fff'); g.shadowBlur = 0; txt(g, `${bmCount()} BOSSES · ${['EASY','HARD','EXTREME','IMPOSSIBLE'][BM.d]}`,VW/2,VH/2 + 46,'600 14px "IBM Plex Mono",monospace','#ff8a90'); g.restore(); }
+  g.fillStyle = '#000'; g.fillRect(0,0,VW,40); g.fillRect(0,VH-40,VW,40);
+}
+
+/* ================= leaderboard (saved on this device) ================= */
+const LB = { from:'settings' };
+const lbTotal = () => progress.bestTime.every(x => x > 0) ? progress.bestTime.reduce((a,b) => a + b, 0) : 0;
+function openLB(from){
+  LB.from = from; state = 'lb'; let board = load('tfs-board', []); if (!Array.isArray(board)) board = [];
+  const total = lbTotal(); let note;
+  if (progress.cheat) note = 'The secret code was used on this save, so it cannot be listed.';
+  else if (!progress.dan) note = 'Beat Boss Mode on Impossible to be listed.';
+  else if (!total) note = 'Clear all 15 floors on Normal in the main game to set your time.';
+  else { board = board.filter(e => e.name !== progress.username); board.push({ name:progress.username || 'Player', time:total, inf:progress.infBest || 0, dan:true }); save('tfs-board', board); note = 'You are listed.'; }
+  board.sort((a,b) => a.time - b.time);
+  $('lbNote').textContent = note + ' Scores are saved on this device only.';
+  $('lbTable').innerHTML = '<b>Username</b><b>Main game time</b><b>Infinite best</b>' + (board.length ? board.map((e,i) => `<span>${i + 1}. ${String(e.name).replace(/[<>&]/g,'')}${e.dan ? ' · Dan The I.T. Man' : ''}</span><span>${fmtTime(e.time)}</span><span>Floor ${e.inf}</span>`).join('') : '<span>No one yet</span><span>–</span><span>–</span>');
+  show('lb'); $('lbBack').focus();
+}
+
+/* ================= secret code: skip floors ================= */
+function skipFloor(){
+  if (BM.on){ BM.skipped = true; if (BM.i >= BM.list.length - 1) bmFinish(); else bmStart(BM.i + 1); return; }
+  if (INF.on){ progress.infFloor = INF.n + 1; save('tfs-progress', progress); beginInf(INF.n + 1); return; }
+  if (LVI >= 0 && LVI < 14){ progress.unlocked = Math.max(progress.unlocked, LVI + 1); save('tfs-progress', progress); beginLevel(LVI + 1); } else openTitle();
+}
+$('nameGo').onclick = nameSubmit; $('nameBack').onclick = openTitle;
+$('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); nameSubmit(); } else if (e.key === 'Escape') openTitle(); });
+$('btnBM').onclick = openBM; $('bmBack').onclick = openFloors;
+$('lbBack').onclick = () => { if (LB.from === 'pause'){ state = 'pause'; show('pause'); } else openSettings(); };
+$('setLb').onclick = () => openLB('settings'); $('pLbBtn').onclick = () => openLB('pause'); $('pSkipBtn').onclick = skipFloor;
 function saveBossRecord(){
   if (DIFF !== 0 || LVI !== 14) return;
   const prev = progress.bestTime[14]; if (prev && SR.level >= prev) return;
@@ -2212,7 +2301,7 @@ function clearArena(){
   arenaDone = true; arena = false;
   solids = solids.filter(s => !s.exit && !s.door);
   hostile = []; MUS.mode = 'calm'; $('bossBar').hidden = true;
-  say('IT', 'Arena clear. The stairwell door is unlocked.', 2.4); sfx.win();
+  say('IT', 'Arena clear. The stairwell door is unlocked.', 2.4); sfx.win(); if (BM.on) levelClear();
 }
 function updMini(m,h){
   if (m.dead){ m.deathT += h; return; }
@@ -2333,7 +2422,7 @@ function updCEO(h){
     }
     if (Math.abs(b.vx) > 10) b.anim += Math.abs(b.vx)*h*.04;
   }
-  if (b.state === 'defeated'){ b.vx *= .95; if (b.t > 2.8 && state === 'play'){ if (LV.inf) levelClear(); else if (BOT.on) botFinish(); else { saveBossRecord(); startCutscene(); } } }
+  if (b.state === 'defeated'){ b.vx *= .95; if (b.t > 2.8 && state === 'play'){ if (LV.inf) levelClear(); else { saveBossRecord(); startCutscene(); } } }
   moveBody(b,h);
   if (b.state === 'defeated' || b.state === 'standup') return;
   const hb = {x:b.x+8, y:b.y+10, w:b.w-16, h:b.h-10};
@@ -2359,7 +2448,7 @@ function enterArena(){
     const { pool, total } = buildPool(); boss.pool = pool; boss.poolTotal = total; BLINES = LV.inf ? infLines() : CEO_LINES;
     player.ammo = Math.max(player.ammo, 8);
     state = 'bossintro'; BI = { i:0, t:0 }; input.l = input.r = input.j = input.d = false; player.vx = 0;
-    $('skipBtn').hidden = false; showBILine();
+    $('skipBtn').hidden = false; showBILine(); const sk = LV.name + ':' + LV.floor + ':' + (BM.on ? BM.i : ''); if (SEEN.has(sk)){ BI.i = BLINES.length - 1; advanceBI(); } else SEEN.add(sk);
   } else {
     player.ammo = Math.max(player.ammo, 6);
     updateBossBar(); $('bossBar').hidden = false;
@@ -2552,7 +2641,7 @@ function updateSR(){
 }
 
 /* ================= flow ================= */
-const screens = { title:$('titleScreen'), settings:$('settingsScreen'), avatar:$('avatarScreen'), floors:$('floorsScreen'), pause:$('pauseScreen'), end:$('endScreen'), finale:$('finaleScreen'), inf:$('infScreen'), secret:$('secretScreen') };
+const screens = { title:$('titleScreen'), settings:$('settingsScreen'), avatar:$('avatarScreen'), floors:$('floorsScreen'), pause:$('pauseScreen'), end:$('endScreen'), finale:$('finaleScreen'), inf:$('infScreen'), secret:$('secretScreen'), name:$('nameScreen'), bm:$('bmScreen'), lb:$('lbScreen') };
 const isTouch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
 function show(name){
   for (const k in screens) screens[k].hidden = k !== name;
@@ -2564,19 +2653,19 @@ function show(name){
   updateSR();
 }
 function openTitle(){
-  state = 'title'; ELEV = null; BOT.on = false; $('botBar').hidden = true; hideSub(); CS = null; ICS = null; BI = null; $('introCard').hidden = true; $('skipBtn').hidden = true; MUS.mode = 'calm';
+  state = 'title'; ELEV = null; BMCS = null; if (BM.on){ DIFF = BM.prev; BM.on = false; } SEEN.clear(); hideSub(); CS = null; ICS = null; BI = null; $('introCard').hidden = true; $('skipBtn').hidden = true; MUS.mode = 'calm';
   if (LVI !== 0){ buildLevel(0); resetPlayer(); }
   const post = progress.finished;
   $('titleH').textContent = post ? 'The Final Shift' : 'TFS';
   $('titleH').style.fontSize = post ? 'clamp(56px,10vw,120px)' : '';
-  $('titleEyebrow').textContent = post ? 'Day 4,382 · Free · Synergex Tower is yours to replay' : 'Synergex Tower · 15 floors · Day 4,381';
+  $('titleEyebrow').textContent = post ? ('Day 4,382 · ' + (progress.dan ? 'Dan The I.T. Man · ' : '') + (progress.username ? progress.username + ' · ' : '') + 'Free') : 'Synergex Tower · 15 floors · Day 4,381';
   $('titleLede').textContent = post ? 'Practice any floor, race the ghost of your best run, change your look, or keep climbing in Infinite Levels.' : 'Your alarm goes off at 4:00 PM. It always does.';
   $('menuPre').hidden = post; $('menuPost').hidden = !post;
   $('btnEnter').textContent = !progress.avatarLocked ? 'Enter' : progress.unlocked > 0 ? `Enter · continue on Floor ${progress.unlocked + 1}` : 'Enter';
   $('titleNote').textContent = post ? '' : progress.avatarLocked ? 'Your badge photo is locked until the CEO is beaten.' : '';
   show('title'); (post ? $('btnFloors') : $('btnEnter')).focus();
 }
-function openSettings(){ wakeAudio(); state = 'settings'; $('sfxVol').value = Math.round(settings.sfx*100); $('musVol').value = Math.round(settings.music*100); $('sfxOut').textContent = $('sfxVol').value; $('musOut').textContent = $('musVol').value; $('gfxBtn').textContent = ultra() ? 'Ultra' : 'Fast'; show('settings'); $('setBack').focus(); }
+function openSettings(){ wakeAudio(); state = 'settings'; $('setLb').hidden = !progress.dan; $('sfxVol').value = Math.round(settings.sfx*100); $('musVol').value = Math.round(settings.music*100); $('sfxOut').textContent = $('sfxVol').value; $('musOut').textContent = $('musVol').value; $('gfxBtn').textContent = ultra() ? 'Ultra' : 'Fast'; show('settings'); $('setBack').focus(); }
 let avSel = 0, avMode = 'new';
 function openAvatar(mode){
   avMode = mode; state = 'avatar'; avSel = 1;
@@ -2586,14 +2675,15 @@ function openAvatar(mode){
   renderOpts(); show('avatar'); $('avStart').focus();
 }
 function renderOpts(){
-  const preset = avatar.preset > 0;
+  const preset = avatar.preset > 0 && progress.finished;
   $('opts').innerHTML = OPTS.map(([k,label,list],r) => {
     const dim = preset && (k === 'outfit' || k === 'head' || k === 'legs' || k === 'shoes');
-    return `<div class="opt${r === avSel ? ' sel' : ''}${dim ? ' dim' : ''}${k === 'preset' ? ' hl' : ''}" data-r="${r}"><span class="lbl">${label}</span><button class="arrow" type="button" data-k="${k}" data-d="-1" aria-label="Previous ${label}" ${dim ? 'disabled' : ''}>◀</button><output>${list[avatar[k]].name}</output><button class="arrow" type="button" data-k="${k}" data-d="1" aria-label="Next ${label}" ${dim ? 'disabled' : ''}>▶</button></div>`;
+    return `<div class="opt${r === avSel ? ' sel' : ''}${dim ? ' dim' : ''}${k === 'preset' ? ' hl' : ''}" data-r="${r}"><span class="lbl">${label}</span><button class="arrow" type="button" data-k="${k}" data-d="-1" aria-label="Previous ${label}" ${dim ? 'disabled' : ''}>◀</button><output>${k === 'preset' && !progress.finished ? 'Locked until you beat the game' : list[avatar[k]].name}</output><button class="arrow" type="button" data-k="${k}" data-d="1" aria-label="Next ${label}" ${dim ? 'disabled' : ''}>▶</button></div>`;
   }).join('');
   document.querySelectorAll('#opts .arrow').forEach(b => b.onclick = () => { avSel = OPTS.findIndex(o => o[0] === b.dataset.k); cycleOpt(b.dataset.k, +b.dataset.d); });
 }
 function cycleOpt(k,d){
+  if (k === 'preset' && !progress.finished) return;
   if (avatar.preset > 0 && (k === 'outfit' || k === 'head' || k === 'legs' || k === 'shoes')) return;
   const list = OPTS.find(o => o[0] === k)[2]; avatar[k] = (avatar[k] + d + list.length) % list.length; save('tfs-avatar', avatar); PLOOK = resolveLook(avatar); renderOpts();
 }
@@ -2621,12 +2711,12 @@ function openFloors(){
 }
 function enterPressed(){
   wakeAudio();
-  if (!progress.avatarLocked) openAvatar('new');
+  if (!progress.avatarLocked){ if (progress.username) openAvatar('new'); else openName(); }
   else { beginLevel(progress.unlocked); }
 }
 function beginLevel(i){
   hideSub(); CS = null; ICS = null; BI = null; ELEV = null; $('skipBtn').hidden = true;
-  INF.on = i < 0; buildLevel(i, i < 0 ? infLevel(INF.n) : undefined); resetPlayer();
+  INF.on = i < 0 && !BM.on; buildLevel(i, i < 0 ? (BM.on ? BM.lv : infLevel(INF.n)) : undefined); resetPlayer(); if (BM.on) player.x = LV.kind === 'mini' ? LV.arenaX + 60 : ROOM_X + 60;
   lives = [3,2,1][DIFF]; score = 0; coffees = 0; killed = 0; timeLeft = Math.round(LV.time*[1,.8,.65][DIFF]); endWon = false;
   for (const k in last) delete last[k];
   updateCamera(0,true); SR.level = 0; ghostRec = []; ghostAcc = 0;
@@ -2637,12 +2727,14 @@ function beginLevel(i){
   $('inFloor').textContent = LV.inf ? `Annex floor ${LV.floor} · Infinite${LV.kind === 'mini' ? ' · Mini boss' : LV.kind === 'ceo' ? ' · Boss' : ''}` : `Floor ${LV.floor} of 15${LV.kind === 'mini' ? ' · Mini boss' : LV.kind === 'ceo' ? ' · Final boss' : ''}`;
   $('inName').textContent = LV.name; $('inMemo').textContent = LV.memo; $('introCard').hidden = false;
   $('clockLbl').textContent = `Floor ${LV.floor} · time left${['',' · Hard',' · Extreme'][DIFF]}`;
+  if (BM.on) $('clockLbl').textContent = `Boss ${BM.i + 1} of ${BM.list.length} · ${['Easy','Hard','Extreme','Impossible'][BM.d]}`;
   updateHUD();
+  if (QUIET) startPlay();
 }
 function startPlay(){ $('introCard').hidden = true; state = 'play'; last_t = performance.now(); show(null); }
 function levelClear(){
-  state = 'end'; endWon = true; ELEV = { t:0 };
-  if (BOT.on){ sfx.win(); return; }
+  state = 'end'; endWon = true; ELEV = BM.on ? null : { t:0 };
+  if (BM.on){ bmClear(); return; }
   if (INF.on){ infClear(); return; }
   const total = enemies.length, allKilled = enemies.every(e => e.dead) && killed >= LV.enemies.length;
   const bonus = Math.ceil(timeLeft)*10 + lives*300 + (allKilled ? 1500 : 0); score += bonus; sfx.win();
@@ -2660,20 +2752,20 @@ function levelClear(){
   $('endReason').textContent = `${killed} obstacles defeated on this floor. ${killed ? 'The CEO keeps a record of every one.' : 'You slipped past everything. The CEO will have little to summon from this floor.'} Floor ${next.floor} is unlocked.`;
   fillStats(); $('endPrimary').textContent = `Next: Floor ${next.floor}`; $('endPrimary').onclick = () => beginLevel(LVI + 1);
   $('endNote').textContent = newBest ? (progress.finished ? 'New best time. Ghost saved.' : 'New best time.') : `Best ${fmtTime(prevBestT)} · press R to retry`;
-  setTimeout(() => { if (state === 'end' && !BOT.on){ show('end'); $('endPrimary').focus(); } }, 2500);
+  setTimeout(() => { if (state === 'end'){ show('end'); $('endPrimary').focus(); } }, 2500);
 }
 function gameOver(cause){
   state = 'end'; endWon = false; sfx.lose(); MUS.mode = 'calm';
   $('endEyebrow').textContent = `Floor ${LV.floor} · shift report`;
   $('endTitle').textContent = 'Still on the clock.'; $('endTitle').className = 'lose';
-  $('endReason').textContent = (LOSE_TEXT[cause] || LOSE_TEXT.chat) + ` Progress is saved: you restart on Floor ${LV.floor}.`;
-  fillStats(); $('endPrimary').textContent = `Retry Floor ${LV.floor}`; $('endPrimary').onclick = () => beginLevel(LVI);
+  $('endReason').textContent = (LOSE_TEXT[cause] || LOSE_TEXT.chat) + `${BM.on ? ' You retry this boss.' : ' Progress is saved: you restart on Floor ' + LV.floor + '.'}`;
+  fillStats(); $('endPrimary').textContent = `Retry Floor ${LV.floor}`; $('endPrimary').onclick = restartLevel;
   $('endNote').textContent = 'R also restarts the floor.';
-  setTimeout(() => { if (state === 'end' && !BOT.on){ show('end'); $('endPrimary').focus(); } }, 700);
+  setTimeout(() => { if (state === 'end'){ show('end'); $('endPrimary').focus(); } }, 700);
 }
 function fillStats(){ $('sScore').textContent = score.toLocaleString(); $('sCleared').textContent = String(killed); $('sCoffee').textContent = String(coffees); $('sTime').textContent = fmtTime(SR.level); }
 function pause(on){
-  if (on && (state === 'play' || state === 'intro')){ pause.prev = state; state = 'pause'; show('pause'); $('resumeBtn').focus(); }
+  if (on && (state === 'play' || state === 'intro')){ pause.prev = state; state = 'pause'; $('pSkipBtn').hidden = !progress.cheat; $('pLbBtn').hidden = !progress.dan; show('pause'); $('resumeBtn').focus(); }
   else if (!on && state === 'pause'){ state = pause.prev || 'play'; show(null); last_t = performance.now(); }
 }
 function resetAll(){
@@ -2689,9 +2781,7 @@ $('btnSecret').onclick = openSecret; $('btnInf').onclick = openInf;
 $('secretGo').onclick = trySecret; $('secretBack').onclick = openTitle;
 $('secretInput').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); trySecret(); } else if (e.key === 'Escape'){ openTitle(); } });
 $('infBack').onclick = openTitle;
-$('finInf').onclick = openInf; $('finRun').onclick = startBot; $('btnBot').onclick = startBot; $('botStop').onclick = botStop;
-$('botSpd').onclick = () => { BOT.speed = BOT.speed === 1 ? 2 : BOT.speed === 2 ? 4 : 1; $('botSpd').textContent = 'Speed ' + BOT.speed + 'x'; };
-$('botDiff').onclick = () => { DIFF = (DIFF + 1) % 3; save('tfs-diff', DIFF); startBot(); };
+$('finInf').onclick = openInf;
 function paintDiff(){ document.querySelectorAll('#diffRow .btn').forEach(b => b.classList.toggle('sel', +b.dataset.d === DIFF)); }
 document.querySelectorAll('#diffRow .btn').forEach(b => b.onclick = () => { DIFF = +b.dataset.d; save('tfs-diff', DIFF); paintDiff(); });
 paintDiff();
@@ -2709,11 +2799,11 @@ $('setBack').onclick = openTitle;
 $('avStart').onclick = avatarContinue;
 $('avBack').onclick = openTitle;
 $('resumeBtn').onclick = () => pause(false);
-$('restartBtn').onclick = () => beginLevel(LVI);
+$('restartBtn').onclick = restartLevel;
 $('pMenuBtn').onclick = openTitle;
 $('endMenu').onclick = openTitle;
 $('pauseBtn').onclick = () => pause(true);
-$('skipBtn').onclick = () => { if (state === 'introcs') endIntroCS(); else if (state === 'bossintro'){ BI.i = BLINES.length - 1; advanceBI(); } else if (state === 'cutscene' && CS){ CS.t = 36.4; } };
+$('skipBtn').onclick = () => { if (state === 'introcs') endIntroCS(); else if (state === 'bmcs') endBMCS(); else if (state === 'bossintro'){ BI.i = BLINES.length - 1; advanceBI(); } else if (state === 'cutscene' && CS){ CS.t = 36.4; } };
 $('sfxVol').oninput = () => { settings.sfx = $('sfxVol').value/100; $('sfxOut').textContent = $('sfxVol').value; applyVolumes(); save('tfs-settings', settings); };
 $('sfxVol').onchange = () => sfx.coffee();
 $('musVol').oninput = () => { settings.music = $('musVol').value/100; $('musOut').textContent = $('musVol').value; applyVolumes(); save('tfs-settings', settings); };
@@ -2723,11 +2813,11 @@ $('gfxBtn').onclick = () => { quality = ultra() ? 'fast' : 'ultra'; settings.gfx
 const KEYMAP = { ArrowLeft:'l', KeyA:'l', ArrowRight:'r', KeyD:'r', Space:'j', ArrowUp:'j', KeyW:'j', KeyZ:'j', ArrowDown:'d', KeyS:'d' };
 addEventListener('keydown', e => {
   if (e.target && e.target.tagName === 'INPUT') return;
-  if (BOT.on && (e.code === 'Escape' || e.code === 'KeyP')){ botStop(); e.preventDefault(); return; }
   if (e.code === 'KeyT' && !e.repeat){ SR.show = !SR.show; save('tfs-sr', SR.show); updateSR(); return; }
-  if (e.code === 'KeyR' && !e.repeat && ['play','intro','pause','end','bossintro'].includes(state)){ e.preventDefault(); beginLevel(LVI); return; }
+  if (e.code === 'KeyR' && !e.repeat && ['play','intro','pause','end','bossintro'].includes(state)){ e.preventDefault(); restartLevel(); return; }
   if ((e.code === 'KeyP' || e.code === 'Escape') && (state === 'play' || state === 'intro' || state === 'pause')){ pause(state !== 'pause'); e.preventDefault(); return; }
   if (state === 'introcs' && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape')){ e.preventDefault(); endIntroCS(); return; }
+  if (state === 'bmcs' && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape')){ e.preventDefault(); endBMCS(); return; }
   if (state === 'bossintro' && (e.code === 'Enter' || e.code === 'Space') && !e.repeat){ e.preventDefault(); advanceBI(); return; }
   if (state === 'cutscene' && e.code === 'Escape'){ CS.t = 36.4; return; }
   if (state === 'avatar'){
@@ -2738,7 +2828,7 @@ addEventListener('keydown', e => {
     if (e.code === 'ArrowLeft' || e.code === 'KeyA'){ e.preventDefault(); cycleOpt(OPTS[avSel][0], -1); return; }
     if (e.code === 'ArrowRight' || e.code === 'KeyD'){ e.preventDefault(); cycleOpt(OPTS[avSel][0], 1); return; }
   }
-  if ((state === 'settings' || state === 'floors' || state === 'inf' || state === 'secret') && e.code === 'Escape'){ openTitle(); return; }
+  if ((state === 'settings' || state === 'floors' || state === 'inf' || state === 'secret' || state === 'name' || state === 'bm') && e.code === 'Escape'){ openTitle(); return; }
   if (state === 'intro' && (e.code === 'Enter' || e.code === 'Space')){ e.preventDefault(); startPlay(); return; }
   if (state === 'end' && e.code === 'Enter' && !screens.end.hidden && document.activeElement !== $('endMenu')){ e.preventDefault(); $('endPrimary').click(); return; }
   if ((e.code === 'KeyF' || e.code === 'KeyK' || e.code === 'KeyX') && state === 'play'){ throwGear(); e.preventDefault(); return; }
@@ -2780,17 +2870,19 @@ function frame(now){
   if (state !== 'pause') T += dt;
   if (state === 'play'){
     SR.level += dt; if (SR.runActive) SR.run += dt;
-    let rem = dt * (BOT.on ? BOT.speed : 1); if (BOT.on) BOT.total += rem;
-    while (rem > 1e-6 && state === 'play'){ const hs = Math.min(rem, 1/120); if (BOT.on){ BOT.acc += hs; if (BOT.acc >= 1/30){ BOT.acc = 0; botThink(); } } step(hs); rem -= hs; }
-    updateCamera(dt * (BOT.on ? BOT.speed : 1)); if (state === 'play') updateHUD();
+    let rem = dt;
+    while (rem > 1e-6 && state === 'play'){ const hs = Math.min(rem, 1/120); step(hs); rem -= hs; }
+    updateCamera(dt); if (state === 'play') updateHUD();
     if (ultra() && !document.hidden){ perfAcc += dt; perfN++; perfTime += dt;
       if (perfTime > 3){ if (perfAcc/perfN > 1/30){ quality = 'fast'; settings.gfx = 'fast'; save('tfs-settings', settings); resize(); const tEl = $('toast'); tEl.textContent = 'Switched to Fast graphics for a smoother frame rate. Change it in Settings.'; tEl.hidden = false; setTimeout(() => tEl.hidden = true, 3200); } perfAcc = perfN = perfTime = 0; } }
   } else if (state === 'intro'){ introT += dt; updateCamera(dt); if (introT > 4.5) startPlay(); }
-  else if (state === 'bossintro'){ updateCamera(dt); if (BI){ BI.t += dt; if (BI.t > (BOT.on ? .3 : 6)) advanceBI(); } }
+  else if (state === 'bossintro'){ updateCamera(dt); if (BI){ BI.t += dt; if (BI.t > 6) advanceBI(); } }
+  else if (state === 'bmcs'){ BMCS.t += dt; while (BMCS.li < BML.length && BMCS.t >= BML[BMCS.li][0]){ const [,w,x] = BML[BMCS.li++]; if (w) say(w,x); else hideSub(); } if (BMCS.t >= 10.5) endBMCS(); }
   else if (state === 'introcs'){
     const prev = ICS.t; ICS.t += dt;
     for (const bt of [1.2,1.5,1.8,2.1,2.4]) if (prev < bt && ICS.t >= bt) sfx.beep();
     if (prev < 2.6 && ICS.t >= 2.6) sfx.clank();
+    for (const wc of [6.55,10.55,13.55,18.55]) if (prev < wc && ICS.t >= wc) sfx.whoosh();
     if (ICS.t >= ICS_LEN) endIntroCS();
   }
   else if (state === 'cutscene'){ if (SR.runActive && CS.t < 2.6) SR.run += dt; updCutscene(dt); updateCamera(dt); }
@@ -2800,9 +2892,9 @@ function frame(now){
     const tx = LV.goalX ? LV.goalX + 37 : player.x;
     if (player.x < tx){ player.vx = 120; player.x = Math.min(tx, player.x + 120*dt); } else player.vx = 0;
     player.anim += dt*6; player.onGround = true;
-    if (BOT.on && ELEV && ELEV.t > 2.0) botNext();
+
   }
-  else if (state === 'end' && BOT.on){ BOT.wait += dt; if (BOT.wait > .8){ BOT.wait = 0; botRetry(); } }
+
   if (state !== 'pause'){ updateFx(dt); updSub(dt); }
   if (state === 'play' || state === 'pause' || state === 'intro' || state === 'bossintro') updateSR();
   try { render(T); } catch(e){ /* keep the loop alive */ }
