@@ -117,6 +117,7 @@ input[type=range]{width:100%;accent-color:var(--amber)}
 #tf{font-size:11px;letter-spacing:.06em}
 input{-webkit-user-select:text;user-select:text}
 .btn.sel{background:var(--amber);color:#1a1206;border-color:transparent}
+#botBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 14px);display:flex;align-items:center;gap:12px;background:var(--glass);border:1px solid rgba(255,180,94,.5);border-radius:12px;padding:8px 12px;font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;z-index:5}
 input.code{font:600 26px var(--f-mono);letter-spacing:.4em;text-transform:uppercase;color:var(--text);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;padding:14px 18px;width:min(320px,100%);box-sizing:border-box}
 input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
 @media (max-width:860px){ .floors{grid-template-columns:repeat(3,minmax(0,1fr))} }
@@ -157,6 +158,7 @@ input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
   <div class="top"><b id="bossName">THE CEO</b><span id="bossSub"></span></div>
   <div class="segs" id="bossSegs"></div>
 </div>
+<div id="botBar" hidden><span>Bot speedrun · 3x speed · invincible</span><button class="icon-btn" id="botStop" type="button">Stop</button></div>
 <div id="introCard" hidden>
   <div class="eyebrow" id="inFloor"></div>
   <h2 id="inName"></h2>
@@ -180,6 +182,7 @@ input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
     <div class="menu" id="menuPost" hidden>
       <button class="btn" id="btnFloors" type="button">Floors</button>
       <button class="btn ghost" id="btnInf" type="button">Infinite Levels</button>
+      <button class="btn ghost" id="btnBot" type="button">Bot speedrun</button>
       <button class="btn ghost" id="btnAvatar" type="button">Avatar</button>
       <button class="btn ghost" id="btnSettings2" type="button">Settings</button>
       <button class="btn ghost danger" id="btnReset" type="button">Reset progress</button>
@@ -283,7 +286,7 @@ input.code::placeholder{color:rgba(154,168,192,.4);letter-spacing:.2em}
       <div><dt>Defeated on the way up</dt><dd id="fKills">0</dd></div>
       <div><dt>Days served</dt><dd>4,381</dd></div>
     </dl>
-    <div class="row"><button class="btn ghost danger" id="finReset" type="button">Reset</button><button class="btn" id="finBack" type="button">Back</button><span class="note" id="finNote"></span></div>
+    <div class="row"><button class="btn ghost danger" id="finReset" type="button">Reset</button><button class="btn" id="finBack" type="button">Back</button><button class="btn ghost" id="finInf" type="button">Enter the Annex</button><button class="btn ghost" id="finRun" type="button">Watch bot speedrun</button><span class="note" id="finNote"></span></div>
   </div>
 </div>
 
@@ -604,7 +607,7 @@ function infClear(){
   $('endReason').textContent = `${killed} obstacles defeated on this floor. ${ahead}`;
   fillStats(); $('endPrimary').textContent = `Next: Floor ${next}`; $('endPrimary').onclick = () => beginInf(next);
   $('endNote').textContent = newBest ? 'New best floor.' : `Best floor ${progress.infBest}`;
-  setTimeout(() => { if (state === 'end'){ show('end'); $('endPrimary').focus(); } }, 900);
+  setTimeout(() => { if (state === 'end' && !BOT.on){ show('end'); $('endPrimary').focus(); } }, 2500);
 }
 function beginInf(n){ INF.n = n; beginLevel(-1); }
 function openInf(){
@@ -633,6 +636,7 @@ let player, boss = null, minis = [], arena = false, arenaDone = false, arenaL = 
 let score = 0, coffees = 0, killed = 0, killsByType = {}, lives = 3, lastPing = 0;
 let CS = null, ICS = null, BI = null, ghost = null, ghostRec = [], ghostAcc = 0;
 let INF = { on:false, n:1, kills:{} }, BLINES = null;
+let ELEV = null, BOT = { on:false, i:0, total:0, lastX:0, stuck:0, wait:0, speed:3 };
 const input = { l:false, r:false, j:false, d:false };
 
 function makeEnemy([type,x,y], i){
@@ -749,6 +753,7 @@ const sfx = {
   oneup(){ [659,784,1319,1047,1175,1568].forEach((f,i)=>tone(f,.1,'square',.08,null,i*.07)); },
   shield(){ tone(1600,.25,'sine',.14,400); tone(300,.2,'triangle',.12); },
   bump(){ tone(180,.08,'square',.12,120); },
+  ding(){ tone(1568,.5,'sine',.14); tone(2093,.8,'sine',.1,null,.12); },
   throw(){ tone(700,.1,'triangle',.1,300); },
   clank(){ tone(260,.08,'square',.1,180); },
   shoot(){ tone(500,.1,'square',.06,900); },
@@ -1447,13 +1452,18 @@ function drawSignsBack(g,t){
   if (LV.kind === 'mini' && cam + VW > LV.arenaX - 40) drawMiniRoom(g,t);
   const dx = LV.goalX, top = GY - 176;
   if (dx < cam + VW + 200 && dx > cam - 300){
-    if (ultra()){ g.globalCompositeOperation = 'lighter'; g.fillStyle = lin(g,dx,0,dx+260,0,['rgba(255,210,150,.28)','rgba(255,210,150,0)']); g.beginPath(); g.moveTo(dx+8,GY); g.lineTo(dx+92,GY); g.lineTo(dx+300,VH); g.lineTo(dx-40,VH); g.closePath(); g.fill(); g.globalCompositeOperation = 'source-over'; }
-    g.fillStyle = '#0c0f15'; g.fillRect(dx-8,top-8,116,184);
-    g.save(); glow(g,'rgba(255,200,140,1)',40); g.fillStyle = lin(g,0,top,0,GY,['#fff3dd','#ffc98a','#ff9f5a']); g.fillRect(dx,top,100,176); g.restore();
-    g.fillStyle = '#2b2f38'; g.fillRect(dx+49,top,2,176);
-    txt(g,'STAIRS',dx+25,top+60,'700 8px "IBM Plex Mono",monospace','rgba(40,30,20,.7)'); txt(g,`FL ${LV.floor+1} ↑`,dx+75,top+60,'700 8px "IBM Plex Mono",monospace','rgba(40,30,20,.7)');
-    g.fillStyle = '#0b1a12'; g.beginPath(); rr(g,dx+20,top-36,60,22,3); g.fill();
-    g.save(); glow(g,'#3dff9a',18); txt(g,'EXIT',dx+50,top-24.5,'800 13px "Bricolage Grotesque",sans-serif','#5dffaf'); g.restore();
+    const pcx = player.x + player.w/2, near = clamp(1 - Math.max(0, Math.abs(pcx - (dx + 50)) - 70)/240, 0, 1);
+    let open = ease(near); if (ELEV) open = ELEV.t < .8 ? 1 : 1 - ease(ph(ELEV.t,.8,1.4));
+    if (ultra() && open > .02){ g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = lin(g,dx,0,dx-300,0,[`rgba(255,215,150,${.3*open})`,'rgba(255,215,150,0)']); g.beginPath(); g.moveTo(dx,top+30); g.lineTo(dx,GY); g.lineTo(dx-320,GY+70); g.lineTo(dx-220,GY-20); g.closePath(); g.fill(); g.restore(); }
+    g.fillStyle = '#0c0f15'; g.fillRect(dx-14,top-16,128,192);
+    g.fillStyle = lin(g,dx-14,0,dx+114,0,['#7e8795','#e4e8ee','#7e8795']); g.fillRect(dx-10,top-12,120,10); g.fillRect(dx-10,top-12,8,184); g.fillRect(dx+102,top-12,8,184);
+    g.save(); glow(g,'rgba(255,220,160,.9)',30*open); g.fillStyle = lin(g,0,top,0,GY,['#fff2d4','#ffdca0','#e8aa62']); g.fillRect(dx,top,100,176); g.restore();
+    g.fillStyle = 'rgba(120,80,40,.22)'; g.fillRect(dx+12,top+24,76,152); g.fillStyle = '#c9ced8'; g.fillRect(dx+8,top+108,84,4);
+    const dw = 50*(1 - open);
+    for (const [x0,right] of [[dx,0],[dx+100-dw,1]]){ if (dw < 1) continue; g.fillStyle = lin(g,x0,0,x0+dw,0,['#9aa3b0','#e9edf2','#8a93a1']); g.fillRect(x0,top,dw,176); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(right ? x0 : x0 + dw - 2, top, 2, 176); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(x0 + (right ? 6 : 4), top, 3, 176); }
+    g.fillStyle = '#07090c'; g.beginPath(); rr(g,dx+22,top-38,56,22,4); g.fill();
+    g.save(); glow(g,'#ffb45e',10); g.fillStyle = '#ffb45e'; g.font = '800 15px "IBM Plex Mono",monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`▲ ${LV.floor + 1}`, dx+50, top-27); g.restore();
+    g.fillStyle = '#c9ced8'; g.beginPath(); rr(g,dx+120,top+80,14,26,4); g.fill(); g.save(); glow(g,near > .3 ? '#5dffaf' : '#ffb45e',8); g.fillStyle = near > .3 ? '#5dffaf' : '#ffb45e'; ell(g,dx+127,top+93,3.4,3.4); g.fill(); g.restore();
   }
 }
 function drawEnvironment(t){
@@ -1544,7 +1554,7 @@ function drawEntities(t){
   for (const h of hostile) drawHostile(g,h,t);
   const gf = ghostFrame();
   if (gf){ g.save(); drawPlayer(g, gf, t, ghost.look); g.restore(); txt(g,'BEST',gf.x+13,gf.y-20,'700 8px "IBM Plex Mono",monospace','rgba(111,211,255,.7)'); }
-  drawPlayer(g,player,t);
+  g.save(); if (ELEV && LV.goalX) g.globalAlpha *= 1 - ease(ph(ELEV.t,.45,.8)); drawPlayer(g,player,t); g.restore();
   for (const s of shots) drawShot(g,s);
   for (const p of particles){
     const a = clamp(p.life/p.max,0,1);
@@ -1557,7 +1567,7 @@ function drawEntities(t){
   g.globalAlpha = 1; g.restore();
 }
 function drawPost(t){
-  const g = ctx, term = CS && CS.t > 2.6 && CS.t < 11.2;
+  const g = ctx, term = CS && ((CS.t > 2.6 && CS.t < 11.2) || CS.t >= 19.2);
   if (!term && !ICS) drawTiled(layers.fg, 1.4);
   if (ultra() && !term && !ICS){
     const sx = VW*.78, sy = 372, cx = VW/2, cy = VH/2;
@@ -1569,6 +1579,7 @@ function drawPost(t){
   gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(0,0,0,.55)'); g.fillStyle = gr; g.fillRect(0,0,VW,VH);
   if (hurtFlash > 0){ g.fillStyle = `rgba(255,40,60,${hurtFlash*.35})`; g.fillRect(0,0,VW,VH); }
   if (state === 'bossintro'){ g.fillStyle = '#000'; g.fillRect(0,0,VW,44); g.fillRect(0,VH-44,VW,44); }
+  if (ELEV) drawElevator();
   if (CS) drawCutsceneOverlay(t);
   if (ultra()){
     g.setTransform(1,0,0,1,0,0);
@@ -1587,6 +1598,7 @@ function render(t){
   ctx.save(); ctx.beginPath(); ctx.rect(0,0,VW,VH); ctx.clip();
   if (ICS) drawIntroCS(ICS.t);
   else if (CS && CS.t > 2.6 && CS.t < 11.2) drawTerminal(CS.t - 2.6);
+  else if (CS && CS.t >= 19.2) drawEpilogue(CS.t - 19.2);
   else { drawEnvironment(t); drawEntities(t); }
   ctx.restore();
   ctx.save(); ctx.beginPath(); ctx.rect(0,0,VW,VH); ctx.clip(); drawPost(t); ctx.restore();
@@ -1895,7 +1907,7 @@ function drawCutsceneOverlay(t){
     const msg = 'BREAKING · SYNERGEX HOLDINGS (SYNX) ▼ 99.3% · ALL EMPLOYMENT AGREEMENTS VOID · CEO RESIGNS · 4,381 STAFF RELEASED · ';
     const w = g.measureText(msg).width, off = -((ct - 11.2)*160 % w); for (let x = off; x < VW; x += w) g.fillText(msg, x, bar + 13);
   }
-  if (ct > 16.4){
+  if (ct > 16.4 && ct < 19.6){
     const k = clamp((ct - 16.4)/3, 0, 1); g.fillStyle = `rgba(255,236,205,${k*.85})`; g.fillRect(0,0,VW,VH);
     if (state !== 'cutscene') return;
     g.globalAlpha = clamp((ct-16.8)*1.5,0,1); txt(g, ct < 17.8 ? '5:00:00 PM' : '5:00:01 PM', VW/2, VH/2 - 10, '800 54px "Bricolage Grotesque",sans-serif', '#28180a');
@@ -1907,8 +1919,83 @@ const CS_LINES = [
   [2.4,null,null],
   [11.4,'The CEO','No… the contract was airtight. Nobody reads page 412.'],
   [13.8,'You','Nobody did. It took me 4,381 night shifts.'],
-  [16.2,null,null]
+  [16.2,null,null],
+  [19.9,'You',"Five o'clock. For the first time in 4,381 days, I get to leave."],
+  [24.4,'You','And everything I knocked aside on the way up? It gets to leave too.'],
+  [28.6,null,null],
+  [29.9,'Phone','New notification · Synergex Annex: Infinite Levels unlocked.'],
+  [34.6,null,null]
 ];
+function drawElevator(){
+  const e = ELEV.t, a = ease(ph(e,1.3,1.8)); if (a <= 0) return;
+  const g = ctx, f0 = LV.floor, rise = e < 2.0;
+  g.save(); g.globalAlpha = a;
+  g.fillStyle = lin(g,0,0,VW,0,['#262a32','#7e8795','#c9ced8','#7e8795','#262a32']); g.fillRect(0,0,VW,VH);
+  g.fillStyle = 'rgba(0,0,0,.12)'; for (let x = 0; x < VW; x += 4) g.fillRect(x,0,1,VH);
+  g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(VW/2-1,40,2,VH-80);
+  g.fillStyle = lin(g,0,VH*.62,0,VH*.62+10,['#e9edf2','#8a93a1']); g.fillRect(0,VH*.62,VW,10);
+  const pw = 150, px = VW/2 - pw/2, py = 62; g.fillStyle = '#07090c'; g.beginPath(); rr(g,px,py,pw,78,10); g.fill();
+  g.save(); glow(g,'#ffb45e',16); g.fillStyle = '#ffb45e'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '800 54px "IBM Plex Mono",monospace'; g.fillText(String(rise ? f0 : f0 + 1), px + pw/2 + 14, py + 42);
+  g.font = '800 26px "IBM Plex Mono",monospace'; g.fillText(rise ? (Math.floor(e*6) % 2 ? '▲' : '△') : '', px + 26, py + 40); g.restore();
+  if (rise){ g.strokeStyle = 'rgba(255,255,255,.16)'; g.lineWidth = 2; const sr = rng(3); for (let i = 0; i < 18; i++){ const x = sr()*VW, y = ((e*900 + sr()*VH*3) % (VH + 120)) - 60; g.beginPath(); g.moveTo(x,y); g.lineTo(x,y+60); g.stroke(); } }
+  else { g.fillStyle = `rgba(255,244,214,${.5*(1 - ph(e,2.0,2.5))})`; g.fillRect(0,0,VW,VH); }
+  g.restore();
+}
+function drawEpilogue(t){
+  const g = ctx, FL = 460, dawn = ease(ph(t,0,10));
+  g.fillStyle = lin(g,0,0,0,FL,[mixc('#0b1430','#5b86bd',dawn), mixc('#2a2f5e','#f0a878',dawn), mixc('#7a4c6a','#ffe0a8',dawn)]); g.fillRect(0,0,VW,VH);
+  const sx = VW*.78, sy = lerp(470,300,dawn), gr = g.createRadialGradient(sx,sy,6,sx,sy,330);
+  gr.addColorStop(0,`rgba(255,240,200,${.4 + .6*dawn})`); gr.addColorStop(.15,`rgba(255,205,140,${.8*dawn})`); gr.addColorStop(1,'rgba(255,150,90,0)'); g.fillStyle = gr; g.fillRect(0,0,VW,FL);
+  const CL = layers.city; for (let x = 0; x < VW; x += CL.w) g.drawImage(CL.c, x, 0, CL.w, CL.h);
+  g.fillStyle = lin(g,0,FL,0,VH,['#8a7a6a','#3a3228']); g.fillRect(0,FL,VW,VH-FL);
+  const tw = 250, th = 320, tx = VW*.12, doorX = tx + tw/2;
+  g.fillStyle = lin(g,tx,0,tx+tw,0,['#171c2b','#222a40','#141926']); g.fillRect(tx,FL-th,tw,th);
+  const r = rng(5); for (let i = 0; i < 6; i++) for (let c = 0; c < 6; c++){ const off = ease(ph(t, .4 + r()*3.4, .9 + r()*3.4)); g.fillStyle = off > .5 ? '#1b2134' : '#ffd9a0'; g.fillRect(tx+12+c*38, FL-th+14+i*50, 28, 34); }
+  if (t < 2.6){ g.save(); g.globalAlpha *= t < 2 ? (Math.random() < .7 ? 1 : .3) : (Math.random() < .3 ? 1 : 0); glow(g,'rgba(255,190,110,1)',20); txt(g,'SYNERGEX',doorX,FL-th-24,'800 24px "Bricolage Grotesque",sans-serif','#ffcf8a'); g.restore(); }
+  else txt(g,'SYNERGEX',doorX,FL-th-24,'800 24px "Bricolage Grotesque",sans-serif','rgba(60,50,60,.6)');
+  g.fillStyle = '#ffe0b0'; g.beginPath(); rr(g,doorX-34,FL-70,68,70,4); g.fill();
+  ['chat','mail','meeting','invite'].forEach((ty,i) => {
+    const [w,h] = SIZES[ty], k = t - (1.4 + i*.8); if (k < 0) return;
+    const x = doorX + 20 + k*(60 + i*9), lift = Math.max(0, t - 7.5 - i*.4), a = 1 - ph(t, 9.5 + i*.4, 12 + i*.4), y = FL + 6 - (ty === 'mail' ? 60 : 0) - lift*lift*16;
+    if (a <= 0 || x > VW + 80) return; g.save(); g.globalAlpha *= a; drawEnemy(g,{type:ty,x:x-w/2,y:y-h,w,h,look:1,seed:i,count:0,dir:1,charging:false,alertT:0,state:'hop',dead:false},t); g.restore(); });
+  if (t > .5){ const [px,pvx] = kpath([[.5,doorX],[4,VW*.58]], t); g.save(); g.translate(px, FL + 6); g.scale(SC,SC);
+    drawPlayer(g, csPerson(0,0,{pose: t > 4.6 && t < 6.6 ? 'stretch' : undefined, prop: t > 9.5 ? 'phone' : null, vx:pvx, anim:t*9}), t, PLOOK); g.restore(); }
+  if (dawn > .05){ g.save(); g.globalCompositeOperation = 'lighter'; for (let i = 0; i < 5; i++){ g.fillStyle = `rgba(255,220,160,${.05*dawn})`; g.beginPath(); g.moveTo(sx,sy); g.lineTo(sx - 900, FL - 260 + i*120); g.lineTo(sx - 900, FL - 200 + i*120); g.closePath(); g.fill(); } g.restore(); }
+  if (t > 2){ g.save(); g.globalAlpha *= ease(ph(t,2,3)); g.textAlign = 'right'; g.font = '800 30px "Bricolage Grotesque",sans-serif'; g.fillStyle = '#fff'; glow(g,'rgba(0,0,0,.7)',10); g.fillText('5:00:01 PM', VW - 36, 84); g.restore(); }
+  if (t > 10.5){ const a = ease(ph(t,10.5,11.3)), cx = Math.min(VW*.58 + 70, VW - 270), cy = 130 - (1 - a)*20;
+    g.save(); g.globalAlpha *= a; glow(g,'rgba(255,180,94,.7)',16 + 6*Math.sin(t*6)); g.fillStyle = 'rgba(10,14,24,.92)'; g.beginPath(); rr(g,cx,cy,250,104,14); g.fill(); g.shadowBlur = 0;
+    g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#ffb45e'; g.font = '600 10px "IBM Plex Mono",monospace'; g.fillText('SYNERGEX ANNEX · NOW', cx+16, cy+22);
+    g.fillStyle = '#fff'; g.font = '800 19px "Bricolage Grotesque",sans-serif'; g.fillText('Infinite Levels unlocked', cx+16, cy+50); g.fillStyle = '#9aa8c0'; g.font = '500 12px "IBM Plex Mono",monospace'; g.fillText('The Annex has no last floor.', cx+16, cy+76); g.restore(); }
+  if (t > 14.3){ const k = ease(ph(t,14.3,15.3)); g.fillStyle = `rgba(5,8,16,${.55*k})`; g.fillRect(0,0,VW,VH); g.save(); g.globalAlpha *= k; glow(g,'rgba(255,180,94,.6)',20); txt(g,'THE FINAL SHIFT',VW/2,VH/2 - 10,'800 64px "Bricolage Grotesque",sans-serif','#fff'); g.shadowBlur = 0; txt(g,'DAY 4,382 · THE ANNEX IS OPEN',VW/2,VH/2 + 38,'600 14px "IBM Plex Mono",monospace','#ffb45e'); g.restore(); }
+  if (t < 1.2){ g.fillStyle = `rgba(255,244,220,${1 - ease(t/1.2)})`; g.fillRect(0,0,VW,VH); }
+}
+/* bot speedrun demo: runs invincible at 3x speed and never stops (the game has no real glitches to exploit) */
+function botThink(){
+  const p = player, pcx = p.x + p.w/2; p.dnd = 99; let dir = 1;
+  if (arena){
+    let ts = enemies.filter(e => !e.dead).map(e => e.x + e.w/2);
+    if (!ts.length) ts = minis.filter(m => !m.dead).map(m => m.x + m.w/2);
+    if (!ts.length && boss && boss.state !== 'defeated' && boss.state !== 'wait') ts = [boss.x + boss.w/2];
+    if (ts.length){ const t = ts.reduce((a,b) => Math.abs(b - pcx) < Math.abs(a - pcx) ? b : a); dir = t > pcx ? 1 : -1; if (Math.abs(t - pcx) < 70 && p.onGround){ p.jumpBuf = .13; input.j = true; } }
+  }
+  input.r = dir > 0; input.l = dir < 0;
+  const front = p.x + p.w, nearGap = dir > 0 && LV.gaps.some(([a]) => front > a - 50 && front < a);
+  if (Math.abs(p.x - BOT.lastX) < .3) BOT.stuck++; else BOT.stuck = 0; BOT.lastX = p.x;
+  if (p.onGround && (nearGap || BOT.stuck > 3)){ p.jumpBuf = .13; input.j = true; }
+  if (p.vy > 0) input.j = false;
+}
+function botFloor(i){ BOT.i = i; BOT.stuck = 0; BOT.wait = 0; beginLevel(i); ghost = null; startPlay(); }
+function botNext(){ if (BOT.i < 14) botFloor(BOT.i + 1); }
+function startBot(){ wakeAudio(); BOT.on = true; BOT.total = 0; SR.runActive = false; $('botBar').hidden = false; botFloor(0); }
+function botStop(){ BOT.on = false; input.l = input.r = input.j = false; $('botBar').hidden = true; openTitle(); }
+function botFinish(){
+  BOT.on = false; input.l = input.r = input.j = false; $('botBar').hidden = true; state = 'end'; endWon = false; ELEV = null; sfx.win();
+  $('endEyebrow').textContent = 'Bot speedrun · complete'; $('endTitle').textContent = 'Run complete.'; $('endTitle').className = 'win';
+  $('endReason').textContent = `The bot cleared all 15 floors and the CEO in ${fmtTime(BOT.total)} of game time. It never stops running, jumps every gap and stays invincible. The game has no real glitches, so this is what a perfect-speed route looks like.`;
+  fillStats(); $('sTime').textContent = fmtTime(BOT.total); $('endPrimary').textContent = 'Watch again'; $('endPrimary').onclick = startBot; $('endNote').textContent = '';
+  show('end'); $('endPrimary').focus();
+}
 function saveBossRecord(){
   if (DIFF !== 0 || LVI !== 14) return;
   const prev = progress.bestTime[14]; if (prev && SR.level >= prev) return;
@@ -1931,7 +2018,8 @@ function updCutscene(dt){
   if (ct > 2.7 && ct < 9.6 && Math.random() < dt*22) sfx.type();
   if (ct > 11.2 && !CS.alarm){ CS.alarm = true; shake = 1; sfx.crash(); }
   if (ct > 11.2 && ct < 16.4){ if (Math.random() < dt*1.4) sfx.alarm(); if (Math.random() < dt*12) burst(cam + Math.random()*VW, CEIL + 4, ['#ffd29a','#ff5a5f','#fff'], 2, 'spark'); shake = Math.max(shake,.15); }
-  if (ct > 20.4 && !CS.done){ CS.done = true; showFinale(); }
+  if (ct > 29.8 && !CS.ping){ CS.ping = true; sfx.ping(); }
+  if (ct > 36.5 && !CS.done){ CS.done = true; showFinale(); }
 }
 function showFinale(){
   state = 'finale'; hideSub(); $('skipBtn').hidden = true;
@@ -2157,7 +2245,7 @@ function updCEO(h){
     }
     if (Math.abs(b.vx) > 10) b.anim += Math.abs(b.vx)*h*.04;
   }
-  if (b.state === 'defeated'){ b.vx *= .95; if (b.t > 2.8 && state === 'play'){ if (LV.inf) levelClear(); else { saveBossRecord(); startCutscene(); } } }
+  if (b.state === 'defeated'){ b.vx *= .95; if (b.t > 2.8 && state === 'play'){ if (LV.inf) levelClear(); else if (BOT.on) botFinish(); else { saveBossRecord(); startCutscene(); } } }
   moveBody(b,h);
   if (b.state === 'defeated' || b.state === 'standup') return;
   const hb = {x:b.x+8, y:b.y+10, w:b.w-16, h:b.h-10};
@@ -2388,7 +2476,7 @@ function show(name){
   updateSR();
 }
 function openTitle(){
-  state = 'title'; hideSub(); CS = null; ICS = null; BI = null; $('introCard').hidden = true; $('skipBtn').hidden = true; MUS.mode = 'calm';
+  state = 'title'; ELEV = null; BOT.on = false; $('botBar').hidden = true; hideSub(); CS = null; ICS = null; BI = null; $('introCard').hidden = true; $('skipBtn').hidden = true; MUS.mode = 'calm';
   if (LVI !== 0){ buildLevel(0); resetPlayer(); }
   const post = progress.finished;
   $('titleH').textContent = post ? 'The Final Shift' : 'TFS';
@@ -2449,7 +2537,7 @@ function enterPressed(){
   else { beginLevel(progress.unlocked); }
 }
 function beginLevel(i){
-  hideSub(); CS = null; ICS = null; BI = null; $('skipBtn').hidden = true;
+  hideSub(); CS = null; ICS = null; BI = null; ELEV = null; $('skipBtn').hidden = true;
   INF.on = i < 0; buildLevel(i, i < 0 ? infLevel(INF.n) : undefined); resetPlayer();
   lives = [3,2,1][DIFF]; score = 0; coffees = 0; killed = 0; timeLeft = Math.round(LV.time*[1,.8,.65][DIFF]); endWon = false;
   for (const k in last) delete last[k];
@@ -2465,7 +2553,8 @@ function beginLevel(i){
 }
 function startPlay(){ $('introCard').hidden = true; state = 'play'; last_t = performance.now(); show(null); }
 function levelClear(){
-  state = 'end'; endWon = true;
+  state = 'end'; endWon = true; ELEV = { t:0 };
+  if (BOT.on){ sfx.win(); return; }
   if (INF.on){ infClear(); return; }
   const total = enemies.length, allKilled = enemies.every(e => e.dead) && killed >= LV.enemies.length;
   const bonus = Math.ceil(timeLeft)*10 + lives*300 + (allKilled ? 1500 : 0); score += bonus; sfx.win();
@@ -2483,7 +2572,7 @@ function levelClear(){
   $('endReason').textContent = `${killed} obstacles defeated on this floor. ${killed ? 'The CEO keeps a record of every one.' : 'You slipped past everything. The CEO will have little to summon from this floor.'} Floor ${next.floor} is unlocked.`;
   fillStats(); $('endPrimary').textContent = `Next: Floor ${next.floor}`; $('endPrimary').onclick = () => beginLevel(LVI + 1);
   $('endNote').textContent = newBest ? (progress.finished ? 'New best time. Ghost saved.' : 'New best time.') : `Best ${fmtTime(prevBestT)} · press R to retry`;
-  setTimeout(() => { if (state === 'end'){ show('end'); $('endPrimary').focus(); } }, 900);
+  setTimeout(() => { if (state === 'end' && !BOT.on){ show('end'); $('endPrimary').focus(); } }, 2500);
 }
 function gameOver(cause){
   state = 'end'; endWon = false; sfx.lose(); MUS.mode = 'calm';
@@ -2492,7 +2581,7 @@ function gameOver(cause){
   $('endReason').textContent = (LOSE_TEXT[cause] || LOSE_TEXT.chat) + ` Progress is saved: you restart on Floor ${LV.floor}.`;
   fillStats(); $('endPrimary').textContent = `Retry Floor ${LV.floor}`; $('endPrimary').onclick = () => beginLevel(LVI);
   $('endNote').textContent = 'R also restarts the floor.';
-  setTimeout(() => { if (state === 'end'){ show('end'); $('endPrimary').focus(); } }, 700);
+  setTimeout(() => { if (state === 'end' && !BOT.on){ show('end'); $('endPrimary').focus(); } }, 700);
 }
 function fillStats(){ $('sScore').textContent = score.toLocaleString(); $('sCleared').textContent = String(killed); $('sCoffee').textContent = String(coffees); $('sTime').textContent = fmtTime(SR.level); }
 function pause(on){
@@ -2512,6 +2601,7 @@ $('btnSecret').onclick = openSecret; $('btnInf').onclick = openInf;
 $('secretGo').onclick = trySecret; $('secretBack').onclick = openTitle;
 $('secretInput').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); trySecret(); } else if (e.key === 'Escape'){ openTitle(); } });
 $('infBack').onclick = openTitle;
+$('finInf').onclick = openInf; $('finRun').onclick = startBot; $('btnBot').onclick = startBot; $('botStop').onclick = botStop;
 function paintDiff(){ document.querySelectorAll('#diffRow .btn').forEach(b => b.classList.toggle('sel', +b.dataset.d === DIFF)); }
 document.querySelectorAll('#diffRow .btn').forEach(b => b.onclick = () => { DIFF = +b.dataset.d; save('tfs-diff', DIFF); paintDiff(); });
 paintDiff();
@@ -2533,7 +2623,7 @@ $('restartBtn').onclick = () => beginLevel(LVI);
 $('pMenuBtn').onclick = openTitle;
 $('endMenu').onclick = openTitle;
 $('pauseBtn').onclick = () => pause(true);
-$('skipBtn').onclick = () => { if (state === 'introcs') endIntroCS(); else if (state === 'bossintro'){ BI.i = BLINES.length - 1; advanceBI(); } else if (state === 'cutscene' && CS){ CS.t = 20.3; } };
+$('skipBtn').onclick = () => { if (state === 'introcs') endIntroCS(); else if (state === 'bossintro'){ BI.i = BLINES.length - 1; advanceBI(); } else if (state === 'cutscene' && CS){ CS.t = 36.4; } };
 $('sfxVol').oninput = () => { settings.sfx = $('sfxVol').value/100; $('sfxOut').textContent = $('sfxVol').value; applyVolumes(); save('tfs-settings', settings); };
 $('sfxVol').onchange = () => sfx.coffee();
 $('musVol').oninput = () => { settings.music = $('musVol').value/100; $('musOut').textContent = $('musVol').value; applyVolumes(); save('tfs-settings', settings); };
@@ -2543,12 +2633,13 @@ $('gfxBtn').onclick = () => { quality = ultra() ? 'fast' : 'ultra'; settings.gfx
 const KEYMAP = { ArrowLeft:'l', KeyA:'l', ArrowRight:'r', KeyD:'r', Space:'j', ArrowUp:'j', KeyW:'j', KeyZ:'j', ArrowDown:'d', KeyS:'d' };
 addEventListener('keydown', e => {
   if (e.target && e.target.tagName === 'INPUT') return;
+  if (BOT.on && (e.code === 'Escape' || e.code === 'KeyP')){ botStop(); e.preventDefault(); return; }
   if (e.code === 'KeyT' && !e.repeat){ SR.show = !SR.show; save('tfs-sr', SR.show); updateSR(); return; }
   if (e.code === 'KeyR' && !e.repeat && ['play','intro','pause','end','bossintro'].includes(state)){ e.preventDefault(); beginLevel(LVI); return; }
   if ((e.code === 'KeyP' || e.code === 'Escape') && (state === 'play' || state === 'intro' || state === 'pause')){ pause(state !== 'pause'); e.preventDefault(); return; }
   if (state === 'introcs' && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape')){ e.preventDefault(); endIntroCS(); return; }
   if (state === 'bossintro' && (e.code === 'Enter' || e.code === 'Space') && !e.repeat){ e.preventDefault(); advanceBI(); return; }
-  if (state === 'cutscene' && e.code === 'Escape'){ CS.t = 20.3; return; }
+  if (state === 'cutscene' && e.code === 'Escape'){ CS.t = 36.4; return; }
   if (state === 'avatar'){
     if (e.code === 'Enter' || e.code === 'NumpadEnter'){ e.preventDefault(); avatarContinue(); return; }
     if (e.code === 'Escape'){ openTitle(); return; }
@@ -2595,16 +2686,18 @@ openTitle();
 
 let last_t = performance.now(), perfAcc = 0, perfN = 0, perfTime = 0;
 function frame(now){
-  const dt = Math.min(.05, (now - last_t)/1000); last_t = now;
+  const dt = Math.max(0, Math.min(.05, (now - last_t)/1000)); last_t = now;
   if (state !== 'pause') T += dt;
   if (state === 'play'){
     SR.level += dt; if (SR.runActive) SR.run += dt;
-    let rem = dt; while (rem > 1e-6 && state === 'play'){ const hs = Math.min(rem, 1/120); step(hs); rem -= hs; }
-    updateCamera(dt); if (state === 'play') updateHUD();
+    if (BOT.on) botThink();
+    let rem = dt * (BOT.on ? BOT.speed : 1); if (BOT.on) BOT.total += rem;
+    while (rem > 1e-6 && state === 'play'){ const hs = Math.min(rem, 1/120); step(hs); rem -= hs; }
+    updateCamera(dt * (BOT.on ? BOT.speed : 1)); if (state === 'play') updateHUD();
     if (ultra() && !document.hidden){ perfAcc += dt; perfN++; perfTime += dt;
       if (perfTime > 3){ if (perfAcc/perfN > 1/30){ quality = 'fast'; settings.gfx = 'fast'; save('tfs-settings', settings); resize(); const tEl = $('toast'); tEl.textContent = 'Switched to Fast graphics for a smoother frame rate. Change it in Settings.'; tEl.hidden = false; setTimeout(() => tEl.hidden = true, 3200); } perfAcc = perfN = perfTime = 0; } }
   } else if (state === 'intro'){ introT += dt; updateCamera(dt); if (introT > 4.5) startPlay(); }
-  else if (state === 'bossintro'){ updateCamera(dt); if (BI){ BI.t += dt; if (BI.t > 6) advanceBI(); } }
+  else if (state === 'bossintro'){ updateCamera(dt); if (BI){ BI.t += dt; if (BI.t > (BOT.on ? .3 : 6)) advanceBI(); } }
   else if (state === 'introcs'){
     const prev = ICS.t; ICS.t += dt;
     for (const bt of [1.2,1.5,1.8,2.1,2.4]) if (prev < bt && ICS.t >= bt) sfx.beep();
@@ -2613,7 +2706,14 @@ function frame(now){
   }
   else if (state === 'cutscene'){ if (SR.runActive && CS.t < 2.6) SR.run += dt; updCutscene(dt); updateCamera(dt); }
   else if (state === 'avatar') drawAvatarPreview(T);
-  else if (state === 'end' && endWon){ player.vx = 120; player.x += player.vx*dt; player.anim += dt*6; player.onGround = true; }
+  else if (state === 'end' && endWon){
+    if (ELEV){ const p0 = ELEV.t; ELEV.t += dt; if (p0 < 1.4 && ELEV.t >= 1.4) sfx.door(); if (p0 < 2.0 && ELEV.t >= 2.0) sfx.ding(); if (ELEV.t > 1.4 && ELEV.t < 2.0) shake = Math.max(shake,.12); }
+    const tx = LV.goalX ? LV.goalX + 37 : player.x;
+    if (player.x < tx){ player.vx = 120; player.x = Math.min(tx, player.x + 120*dt); } else player.vx = 0;
+    player.anim += dt*6; player.onGround = true;
+    if (BOT.on && ELEV && ELEV.t > 2.0) botNext();
+  }
+  else if (state === 'end' && BOT.on){ BOT.wait += dt; if (BOT.wait > .8){ BOT.wait = 0; botFloor(BOT.i); } }
   if (state !== 'pause'){ updateFx(dt); updSub(dt); }
   if (state === 'play' || state === 'pause' || state === 'intro' || state === 'bossintro') updateSR();
   try { render(T); } catch(e){ /* keep the loop alive */ }
